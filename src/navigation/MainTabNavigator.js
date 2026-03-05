@@ -6,8 +6,8 @@ import { COLORS } from '../constants/theme';
 
 import HomeScreen from '../screens/HomeScreen';
 import ExploreScreen from '../screens/ExploreScreen';
-import CartScreen from '../screens/CartScreen';
 import MyOrdersScreen from '../screens/MyOrdersScreen';
+import EWalletScreen from '../screens/EWalletScreen';
 import ProfileScreen from '../screens/ProfileScreen';
 
 const Tab = createBottomTabNavigator();
@@ -15,8 +15,8 @@ const Tab = createBottomTabNavigator();
 const TAB_ICONS = {
     Home: { active: 'home', inactive: 'home-outline' },
     Explore: { active: 'search', inactive: 'search-outline' },
-    Cart: { active: 'cart', inactive: 'cart-outline' },
     Orders: { active: 'document-text', inactive: 'document-text-outline' },
+    Wallet: { active: 'wallet', inactive: 'wallet-outline' },
     Profile: { active: 'person', inactive: 'person-outline' },
 };
 
@@ -44,8 +44,8 @@ export default function MainTabNavigator() {
         >
             <Tab.Screen name="Home" component={HomeScreen} />
             <Tab.Screen name="Explore" component={ExploreScreen} />
-            <Tab.Screen name="Cart" component={CartScreen} />
             <Tab.Screen name="Orders" component={MyOrdersScreen} />
+            <Tab.Screen name="Wallet" component={EWalletScreen} />
             <Tab.Screen name="Profile" component={ProfileScreen} />
         </Tab.Navigator>
     );

@@ -34,6 +34,14 @@ import OrderSuccessScreen from './src/screens/OrderSuccessScreen';
 import TrackOrderScreen from './src/screens/TrackOrderScreen';
 import LeaveReviewScreen from './src/screens/LeaveReviewScreen';
 
+// Wallet Screens
+import EWalletScreen from './src/screens/EWalletScreen';
+import TopUpWalletScreen from './src/screens/TopUpWalletScreen';
+import TopUpMethodScreen from './src/screens/TopUpMethodScreen';
+import WalletPinScreen from './src/screens/WalletPinScreen';
+import TransactionHistoryScreen from './src/screens/TransactionHistoryScreen';
+import EReceiptScreen from './src/screens/EReceiptScreen';
+
 const Stack = createNativeStackNavigator();
 
 export default function App() {
@@ -78,6 +86,14 @@ export default function App() {
           <Stack.Screen name="OrderSuccess" component={OrderSuccessScreen} />
           <Stack.Screen name="TrackOrder" component={TrackOrderScreen} />
           <Stack.Screen name="LeaveReview" component={LeaveReviewScreen} />
+
+          {/* ── Wallet Flow ── */}
+          <Stack.Screen name="EWallet" component={EWalletScreen} />
+          <Stack.Screen name="TopUpWallet" component={TopUpWalletScreen} />
+          <Stack.Screen name="TopUpMethod" component={TopUpMethodScreen} />
+          <Stack.Screen name="WalletPin" component={WalletPinScreen} />
+          <Stack.Screen name="TransactionHistory" component={TransactionHistoryScreen} />
+          <Stack.Screen name="EReceipt" component={EReceiptScreen} />
         </Stack.Navigator>
       </NavigationContainer>
     </SafeAreaProvider>

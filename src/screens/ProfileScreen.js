@@ -8,8 +8,8 @@ import Button from '../components/Button';
 const MENU_ITEMS = [
     { id: '0', icon: 'document-text-outline', label: 'My Orders', target: 'Orders' },
     { id: '1', icon: 'person-outline', label: 'Edit Profile' },
-    { id: '2', icon: 'notifications-outline', label: 'Notifications' },
-    { id: '3', icon: 'lock-closed-outline', label: 'Privacy & Security' },
+    { id: '2', icon: 'wallet-outline', label: 'My E-Wallet', target: 'Wallet' },
+    { id: '3', icon: 'notifications-outline', label: 'Notifications', target: 'Notifications' },
     { id: '4', icon: 'card-outline', label: 'Payment Methods' },
     { id: '5', icon: 'help-circle-outline', label: 'Help & Support' },
     { id: '6', icon: 'settings-outline', label: 'Settings' },

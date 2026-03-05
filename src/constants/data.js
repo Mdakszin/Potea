@@ -151,3 +151,51 @@ export const NOTIFICATIONS = [
         isRead: true,
     },
 ];
+
+export const TRANSACTIONS = [
+    {
+        id: '1',
+        name: 'Prayer Plant',
+        date: 'Dec 15, 2024 | 10:00 AM',
+        amount: 29.00,
+        type: 'Orders',
+        icon: 'https://images.unsplash.com/photo-1612690669207-fed642192c40?auto=format&fit=crop&w=100&q=80',
+        isTopUp: false,
+    },
+    {
+        id: '2',
+        name: 'Top Up Wallet',
+        date: 'Dec 14, 2024 | 16:42 PM',
+        amount: 100.00,
+        type: 'Top Up',
+        icon: null,
+        isTopUp: true,
+    },
+    {
+        id: '3',
+        name: 'Rubber Fig Plant',
+        date: 'Dec 14, 2024 | 11:39 AM',
+        amount: 99.00,
+        type: 'Orders',
+        icon: 'https://images.unsplash.com/photo-1614594975525-e45190c55d0b?auto=format&fit=crop&w=100&q=80',
+        isTopUp: false,
+    },
+    {
+        id: '4',
+        name: 'ZZ Plant',
+        date: 'Dec 13, 2024 | 14:46 PM',
+        amount: 50.00,
+        type: 'Orders',
+        icon: 'https://images.unsplash.com/photo-1596547609652-9cf5d8d76921?auto=format&fit=crop&w=100&q=80',
+        isTopUp: false,
+    },
+    {
+        id: '5',
+        name: 'Top Up Wallet',
+        date: 'Dec 12, 2024 | 09:27 AM',
+        amount: 75.00,
+        type: 'Top Up',
+        icon: null,
+        isTopUp: true,
+    },
+];

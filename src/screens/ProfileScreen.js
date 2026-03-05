@@ -7,12 +7,16 @@ import Button from '../components/Button';
 
 const MENU_ITEMS = [
     { id: '0', icon: 'document-text-outline', label: 'My Orders', target: 'Orders' },
-    { id: '1', icon: 'person-outline', label: 'Edit Profile' },
+    { id: '1', icon: 'person-outline', label: 'Edit Profile', target: 'EditProfile' },
     { id: '2', icon: 'wallet-outline', label: 'My E-Wallet', target: 'Wallet' },
-    { id: '3', icon: 'notifications-outline', label: 'Notifications', target: 'Notifications' },
-    { id: '4', icon: 'card-outline', label: 'Payment Methods' },
-    { id: '5', icon: 'help-circle-outline', label: 'Help & Support' },
-    { id: '6', icon: 'settings-outline', label: 'Settings' },
+    { id: '3', icon: 'notifications-outline', label: 'Notifications', target: 'NotificationSettings' },
+    { id: '4', icon: 'location-outline', label: 'Address', target: 'Address' },
+    { id: '5', icon: 'lock-closed-outline', label: 'Security', target: 'Security' },
+    { id: '6', icon: 'language-outline', label: 'Language', target: 'Language' },
+    { id: '7', icon: 'eye-outline', label: 'Dark Mode', isToggle: true },
+    { id: '8', icon: 'shield-checkmark-outline', label: 'Privacy Policy', target: 'PrivacyPolicy' },
+    { id: '9', icon: 'help-circle-outline', label: 'Help Center', target: 'HelpCenter' },
+    { id: '10', icon: 'people-outline', label: 'Invite Friends', target: 'InviteFriends' },
 ];
 
 export default function ProfileScreen({ navigation }) {
@@ -52,7 +56,13 @@ export default function ProfileScreen({ navigation }) {
                             </View>
                             <View style={styles.menuRight}>
                                 {item.label === 'Language' && <Text style={styles.menuValue}>English (US)</Text>}
-                                <Ionicons name="chevron-forward" size={20} color={COLORS.text} />
+                                {item.isToggle ? (
+                                    <View style={[styles.toggle, { backgroundColor: COLORS.primary }]}>
+                                        <View style={styles.toggleCircle} />
+                                    </View>
+                                ) : (
+                                    <Ionicons name="chevron-forward" size={20} color={COLORS.text} />
+                                )}
                             </View>
                         </TouchableOpacity>
                     ))}
@@ -103,5 +113,12 @@ const styles = StyleSheet.create({
     menuLeft: { flexDirection: 'row', alignItems: 'center', gap: 16 },
     menuRight: { flexDirection: 'row', alignItems: 'center', gap: 12 },
     menuLabel: { ...TYPOGRAPHY.body, fontWeight: '600', color: COLORS.text },
-    menuValue: { ...TYPOGRAPHY.body, fontWeight: '600', color: COLORS.text },
+    menuValue: { ...TYPOGRAPHY.body, fontWeight: '600', color: COLORS.text, marginRight: 8 },
+    toggle: {
+        width: 44, height: 24, borderRadius: 12, padding: 2,
+        justifyContent: 'center', alignItems: 'flex-end',
+    },
+    toggleCircle: {
+        width: 20, height: 20, borderRadius: 10, backgroundColor: COLORS.white,
+    }
 });

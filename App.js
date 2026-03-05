@@ -42,6 +42,18 @@ import WalletPinScreen from './src/screens/WalletPinScreen';
 import TransactionHistoryScreen from './src/screens/TransactionHistoryScreen';
 import EReceiptScreen from './src/screens/EReceiptScreen';
 
+// Profile & Settings Screens
+import EditProfileScreen from './src/screens/EditProfileScreen';
+import AddressScreen from './src/screens/AddressScreen';
+import AddAddressScreen from './src/screens/AddAddressScreen';
+import NotificationSettingsScreen from './src/screens/NotificationSettingsScreen';
+import SecurityScreen from './src/screens/SecurityScreen';
+import LanguageScreen from './src/screens/LanguageScreen';
+import PrivacyPolicyScreen from './src/screens/PrivacyPolicyScreen';
+import HelpCenterScreen from './src/screens/HelpCenterScreen';
+import CustomerServiceChatScreen from './src/screens/CustomerServiceChatScreen';
+import InviteFriendsScreen from './src/screens/InviteFriendsScreen';
+
 const Stack = createNativeStackNavigator();
 
 export default function App() {
@@ -94,6 +106,18 @@ export default function App() {
           <Stack.Screen name="WalletPin" component={WalletPinScreen} />
           <Stack.Screen name="TransactionHistory" component={TransactionHistoryScreen} />
           <Stack.Screen name="EReceipt" component={EReceiptScreen} />
+
+          {/* ── Profile & Settings ── */}
+          <Stack.Screen name="EditProfile" component={EditProfileScreen} />
+          <Stack.Screen name="Address" component={AddressScreen} />
+          <Stack.Screen name="AddAddress" component={AddAddressScreen} />
+          <Stack.Screen name="NotificationSettings" component={NotificationSettingsScreen} />
+          <Stack.Screen name="Security" component={SecurityScreen} />
+          <Stack.Screen name="Language" component={LanguageScreen} />
+          <Stack.Screen name="PrivacyPolicy" component={PrivacyPolicyScreen} />
+          <Stack.Screen name="HelpCenter" component={HelpCenterScreen} />
+          <Stack.Screen name="CustomerServiceChat" component={CustomerServiceChatScreen} />
+          <Stack.Screen name="InviteFriends" component={InviteFriendsScreen} />
         </Stack.Navigator>
       </NavigationContainer>
     </SafeAreaProvider>

@@ -3,9 +3,6 @@ import { View, Text, StyleSheet, Image, TouchableOpacity, Dimensions } from 'rea
 import { COLORS, TYPOGRAPHY, SPACING } from '../constants/theme';
 import { Ionicons } from '@expo/vector-icons';
 
-const { width } = Dimensions.get('window');
-const CARD_WIDTH = (width - SPACING.lg * 2 - SPACING.md) / 2;
-
 export default function PlantCard({ item, onPress, onToggleFavorite, style }) {
     const [isFav, setIsFav] = useState(item.isFavorite);
 
@@ -56,7 +53,7 @@ export default function PlantCard({ item, onPress, onToggleFavorite, style }) {
 
 const styles = StyleSheet.create({
     card: {
-        width: CARD_WIDTH,
+        flex: 1,
         backgroundColor: COLORS.white,
         borderRadius: 16,
         overflow: 'hidden',
@@ -70,7 +67,7 @@ const styles = StyleSheet.create({
     },
     imageContainer: {
         width: '100%',
-        height: CARD_WIDTH * 0.9,
+        aspectRatio: 1,
         backgroundColor: COLORS.primaryLight,
         position: 'relative',
     },

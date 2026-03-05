@@ -5,6 +5,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import Button from '../components/Button';
 
+import LayoutContainer from '../components/LayoutContainer';
+
 const MENU_ITEMS = [
     { id: '0', icon: 'document-text-outline', label: 'My Orders', target: 'Orders' },
     { id: '1', icon: 'person-outline', label: 'Edit Profile', target: 'EditProfile' },
@@ -22,63 +24,65 @@ const MENU_ITEMS = [
 export default function ProfileScreen({ navigation }) {
     return (
         <SafeAreaView style={styles.container}>
-            <ScrollView>
-                <View style={styles.header}>
-                    <Text style={styles.title}>My Profile</Text>
-                </View>
-
-                {/* Avatar & Info */}
-                <View style={styles.profileSection}>
-                    <View style={styles.avatarWrapper}>
-                        <Image
-                            source={{ uri: 'https://images.unsplash.com/photo-1547425260-76bcadfb4f2c?auto=format&fit=crop&w=200&q=80' }}
-                            style={styles.avatar}
-                        />
-                        <TouchableOpacity style={styles.editBadge}>
-                            <Ionicons name="pencil" size={14} color={COLORS.white} />
-                        </TouchableOpacity>
+            <LayoutContainer>
+                <ScrollView>
+                    <View style={styles.header}>
+                        <Text style={styles.title}>My Profile</Text>
                     </View>
-                    <Text style={styles.name}>Andrew Ainsley</Text>
-                    <Text style={styles.email}>andrew_ainsley@yourdomain.com</Text>
-                </View>
 
-                {/* Menu items */}
-                <View style={styles.menuContainer}>
-                    {MENU_ITEMS.map((item, idx) => (
+                    {/* Avatar & Info */}
+                    <View style={styles.profileSection}>
+                        <View style={styles.avatarWrapper}>
+                            <Image
+                                source={{ uri: 'https://images.unsplash.com/photo-1547425260-76bcadfb4f2c?auto=format&fit=crop&w=200&q=80' }}
+                                style={styles.avatar}
+                            />
+                            <TouchableOpacity style={styles.editBadge}>
+                                <Ionicons name="pencil" size={14} color={COLORS.white} />
+                            </TouchableOpacity>
+                        </View>
+                        <Text style={styles.name}>Andrew Ainsley</Text>
+                        <Text style={styles.email}>andrew_ainsley@yourdomain.com</Text>
+                    </View>
+
+                    {/* Menu items */}
+                    <View style={styles.menuContainer}>
+                        {MENU_ITEMS.map((item, idx) => (
+                            <TouchableOpacity
+                                key={item.id}
+                                style={styles.menuItem}
+                                onPress={() => item.target && navigation.navigate(item.target)}
+                            >
+                                <View style={styles.menuLeft}>
+                                    <Ionicons name={item.icon} size={24} color={COLORS.text} />
+                                    <Text style={styles.menuLabel}>{item.label}</Text>
+                                </View>
+                                <View style={styles.menuRight}>
+                                    {item.label === 'Language' && <Text style={styles.menuValue}>English (US)</Text>}
+                                    {item.isToggle ? (
+                                        <View style={[styles.toggle, { backgroundColor: COLORS.primary }]}>
+                                            <View style={styles.toggleCircle} />
+                                        </View>
+                                    ) : (
+                                        <Ionicons name="chevron-forward" size={20} color={COLORS.text} />
+                                    )}
+                                </View>
+                            </TouchableOpacity>
+                        ))}
+
+                        {/* Logout with special color */}
                         <TouchableOpacity
-                            key={item.id}
-                            style={styles.menuItem}
-                            onPress={() => item.target && navigation.navigate(item.target)}
+                            style={[styles.menuItem, { borderBottomWidth: 0 }]}
+                            onPress={() => navigation.replace('LetsYouIn')}
                         >
                             <View style={styles.menuLeft}>
-                                <Ionicons name={item.icon} size={24} color={COLORS.text} />
-                                <Text style={styles.menuLabel}>{item.label}</Text>
-                            </View>
-                            <View style={styles.menuRight}>
-                                {item.label === 'Language' && <Text style={styles.menuValue}>English (US)</Text>}
-                                {item.isToggle ? (
-                                    <View style={[styles.toggle, { backgroundColor: COLORS.primary }]}>
-                                        <View style={styles.toggleCircle} />
-                                    </View>
-                                ) : (
-                                    <Ionicons name="chevron-forward" size={20} color={COLORS.text} />
-                                )}
+                                <Ionicons name="log-out-outline" size={24} color="#FF4D4D" />
+                                <Text style={[styles.menuLabel, { color: '#FF4D4D' }]}>Logout</Text>
                             </View>
                         </TouchableOpacity>
-                    ))}
-
-                    {/* Logout with special color */}
-                    <TouchableOpacity
-                        style={[styles.menuItem, { borderBottomWidth: 0 }]}
-                        onPress={() => navigation.replace('LetsYouIn')}
-                    >
-                        <View style={styles.menuLeft}>
-                            <Ionicons name="log-out-outline" size={24} color="#FF4D4D" />
-                            <Text style={[styles.menuLabel, { color: '#FF4D4D' }]}>Logout</Text>
-                        </View>
-                    </TouchableOpacity>
-                </View>
-            </ScrollView>
+                    </View>
+                </ScrollView>
+            </LayoutContainer>
         </SafeAreaView>
     );
 }

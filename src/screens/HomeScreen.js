@@ -1,15 +1,16 @@
-import React, { useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import {
-    View, Text, StyleSheet, ScrollView, FlatList,
-    Image, TouchableOpacity, Dimensions, TextInput
+    View, Text, StyleSheet, FlatList, Image,
+    TouchableOpacity, TextInput, ScrollView, Dimensions, Animated
 } from 'react-native';
 import { COLORS, TYPOGRAPHY, SPACING } from '../constants/theme';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import PlantCard from '../components/PlantCard';
+import Button from '../components/Button';
 import { PLANTS, CATEGORIES } from '../constants/data';
-
-const { width } = Dimensions.get('window');
+import LayoutContainer from '../components/LayoutContainer';
+import { useResponsive } from '../utils/responsive';
 
 const BANNERS = [
     {
@@ -29,9 +30,13 @@ const BANNERS = [
 ];
 
 export default function HomeScreen({ navigation }) {
+    const { getColumns, contentMaxWidth, width: screenWidth } = useResponsive();
     const [search, setSearch] = useState('');
     const [activeCategory, setActiveCategory] = useState('all');
     const [activeBanner, setActiveBanner] = useState(0);
+
+    const numColumns = getColumns();
+    const bannerWidth = Math.min(screenWidth, contentMaxWidth) - SPACING.lg * 2;
 
     const filtered = PLANTS.filter(p => {
         const matchCat = activeCategory === 'all' || p.category.toLowerCase() === activeCategory;
@@ -41,129 +46,133 @@ export default function HomeScreen({ navigation }) {
 
     return (
         <SafeAreaView style={styles.container}>
-            <ScrollView showsVerticalScrollIndicator={false}>
+            <LayoutContainer>
+                <ScrollView showsVerticalScrollIndicator={false}>
 
-                {/* ── Header ── */}
-                <View style={styles.header}>
-                    <View>
-                        <Text style={styles.greeting}>Good morning 👋</Text>
-                        <Text style={styles.username}>Andrew Ainsley</Text>
+                    {/* ── Header ── */}
+                    <View style={styles.header}>
+                        <View>
+                            <Text style={styles.greeting}>Good morning 👋</Text>
+                            <Text style={styles.username}>Andrew Ainsley</Text>
+                        </View>
+                        <View style={styles.headerRight}>
+                            <TouchableOpacity style={styles.iconBtn} onPress={() => navigation.navigate('Notifications')}>
+                                <Ionicons name="notifications-outline" size={24} color={COLORS.text} />
+                            </TouchableOpacity>
+                            <TouchableOpacity style={styles.iconBtn} onPress={() => navigation.navigate('Wishlist')}>
+                                <Ionicons name="heart-outline" size={24} color={COLORS.text} />
+                            </TouchableOpacity>
+                            <TouchableOpacity style={styles.iconBtn} onPress={() => navigation.navigate('Cart')}>
+                                <Ionicons name="cart-outline" size={24} color={COLORS.text} />
+                            </TouchableOpacity>
+                            <TouchableOpacity style={styles.avatarContainer}>
+                                <Image
+                                    source={{ uri: 'https://images.unsplash.com/photo-1547425260-76bcadfb4f2c?auto=format&fit=crop&w=200&q=80' }}
+                                    style={styles.avatar}
+                                />
+                            </TouchableOpacity>
+                        </View>
                     </View>
-                    <View style={styles.headerRight}>
-                        <TouchableOpacity style={styles.iconBtn} onPress={() => navigation.navigate('Notifications')}>
-                            <Ionicons name="notifications-outline" size={24} color={COLORS.text} />
-                        </TouchableOpacity>
-                        <TouchableOpacity style={styles.iconBtn} onPress={() => navigation.navigate('Wishlist')}>
-                            <Ionicons name="heart-outline" size={24} color={COLORS.text} />
-                        </TouchableOpacity>
-                        <TouchableOpacity style={styles.iconBtn} onPress={() => navigation.navigate('Cart')}>
-                            <Ionicons name="cart-outline" size={24} color={COLORS.text} />
-                        </TouchableOpacity>
-                        <TouchableOpacity style={styles.avatarContainer}>
-                            <Image
-                                source={{ uri: 'https://images.unsplash.com/photo-1547425260-76bcadfb4f2c?auto=format&fit=crop&w=200&q=80' }}
-                                style={styles.avatar}
+
+                    {/* ── Search Bar ── */}
+                    <View style={styles.searchRow}>
+                        <View style={styles.searchBar}>
+                            <Ionicons name="search-outline" size={20} color={COLORS.textLight} style={styles.searchIcon} />
+                            <TextInput
+                                style={styles.searchInput}
+                                placeholder="Search plants..."
+                                placeholderTextColor={COLORS.textLight}
+                                value={search}
+                                onChangeText={setSearch}
                             />
+                        </View>
+                        <TouchableOpacity style={styles.filterBtn}>
+                            <Ionicons name="options-outline" size={22} color={COLORS.white} />
                         </TouchableOpacity>
                     </View>
-                </View>
 
-                {/* ── Search Bar ── */}
-                <View style={styles.searchRow}>
-                    <View style={styles.searchBar}>
-                        <Ionicons name="search-outline" size={20} color={COLORS.textLight} style={styles.searchIcon} />
-                        <TextInput
-                            style={styles.searchInput}
-                            placeholder="Search plants..."
-                            placeholderTextColor={COLORS.textLight}
-                            value={search}
-                            onChangeText={setSearch}
-                        />
-                    </View>
-                    <TouchableOpacity style={styles.filterBtn}>
-                        <Ionicons name="options-outline" size={22} color={COLORS.white} />
-                    </TouchableOpacity>
-                </View>
-
-                {/* ── Banner Carousel ── */}
-                <ScrollView
-                    horizontal
-                    pagingEnabled
-                    showsHorizontalScrollIndicator={false}
-                    style={styles.bannerScroll}
-                    onMomentumScrollEnd={e => {
-                        const idx = Math.round(e.nativeEvent.contentOffset.x / (width - SPACING.lg * 2));
-                        setActiveBanner(idx);
-                    }}
-                >
-                    {BANNERS.map((b) => (
-                        <View key={b.id} style={[styles.banner, { backgroundColor: b.bg, width: width - SPACING.lg * 2 }]}>
-                            <View style={styles.bannerText}>
-                                <Text style={styles.bannerTitle}>{b.title}</Text>
-                                <Text style={styles.bannerSubtitle}>{b.subtitle}</Text>
-                                <TouchableOpacity style={styles.shopNowBtn}>
-                                    <Text style={styles.shopNowText}>Shop Now</Text>
-                                </TouchableOpacity>
+                    {/* ── Banner Carousel ── */}
+                    <ScrollView
+                        horizontal
+                        pagingEnabled
+                        showsHorizontalScrollIndicator={false}
+                        style={styles.bannerScroll}
+                        onMomentumScrollEnd={e => {
+                            const idx = Math.round(e.nativeEvent.contentOffset.x / bannerWidth);
+                            setActiveBanner(idx);
+                        }}
+                    >
+                        {BANNERS.map((b) => (
+                            <View key={b.id} style={[styles.banner, { backgroundColor: b.bg, width: bannerWidth }]}>
+                                <View style={styles.bannerText}>
+                                    <Text style={styles.bannerTitle}>{b.title}</Text>
+                                    <Text style={styles.bannerSubtitle}>{b.subtitle}</Text>
+                                    <TouchableOpacity style={styles.shopNowBtn}>
+                                        <Text style={styles.shopNowText}>Shop Now</Text>
+                                    </TouchableOpacity>
+                                </View>
+                                <Image source={{ uri: b.image }} style={styles.bannerImage} resizeMode="cover" />
                             </View>
-                            <Image source={{ uri: b.image }} style={styles.bannerImage} resizeMode="cover" />
-                        </View>
-                    ))}
+                        ))}
+                    </ScrollView>
+
+                    {/* Banner Dots */}
+                    <View style={styles.bannerDots}>
+                        {BANNERS.map((_, i) => (
+                            <View key={i} style={[styles.dot, activeBanner === i && styles.dotActive]} />
+                        ))}
+                    </View>
+
+                    {/* ── Categories ── */}
+                    <View style={styles.sectionHeader}>
+                        <Text style={styles.sectionTitle}>Category</Text>
+                        <TouchableOpacity><Text style={styles.seeAll}>See All</Text></TouchableOpacity>
+                    </View>
+                    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.categoriesScroll}>
+                        {CATEGORIES.map(cat => (
+                            <TouchableOpacity
+                                key={cat.id}
+                                style={[styles.catChip, activeCategory === cat.id && styles.catChipActive]}
+                                onPress={() => setActiveCategory(cat.id)}
+                            >
+                                <Text style={[styles.catText, activeCategory === cat.id && styles.catTextActive]}>
+                                    {cat.label}
+                                </Text>
+                            </TouchableOpacity>
+                        ))}
+                    </ScrollView>
+
+                    {/* ── Most Popular ── */}
+                    <View style={styles.sectionHeader}>
+                        <Text style={styles.sectionTitle}>Most Popular</Text>
+                        <TouchableOpacity><Text style={styles.seeAll}>See All</Text></TouchableOpacity>
+                    </View>
+
+                    <FlatList
+                        key={`grid-${numColumns}`}
+                        data={filtered}
+                        keyExtractor={item => item.id}
+                        numColumns={numColumns}
+                        columnWrapperStyle={numColumns > 1 ? styles.columnWrapper : null}
+                        scrollEnabled={false}
+                        contentContainerStyle={styles.gridContainer}
+                        renderItem={({ item }) => (
+                            <PlantCard
+                                item={item}
+                                style={numColumns > 1 ? { marginHorizontal: SPACING.xs } : { marginBottom: SPACING.md }}
+                                onPress={(plant) => navigation.navigate('ProductDetail', { plant })}
+                            />
+                        )}
+                        ListEmptyComponent={
+                            <View style={styles.emptyContainer}>
+                                <Ionicons name="leaf-outline" size={60} color={COLORS.border} />
+                                <Text style={styles.emptyText}>No plants found</Text>
+                            </View>
+                        }
+                    />
+
                 </ScrollView>
-
-                {/* Banner Dots */}
-                <View style={styles.bannerDots}>
-                    {BANNERS.map((_, i) => (
-                        <View key={i} style={[styles.dot, activeBanner === i && styles.dotActive]} />
-                    ))}
-                </View>
-
-                {/* ── Categories ── */}
-                <View style={styles.sectionHeader}>
-                    <Text style={styles.sectionTitle}>Category</Text>
-                    <TouchableOpacity><Text style={styles.seeAll}>See All</Text></TouchableOpacity>
-                </View>
-                <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.categoriesScroll}>
-                    {CATEGORIES.map(cat => (
-                        <TouchableOpacity
-                            key={cat.id}
-                            style={[styles.catChip, activeCategory === cat.id && styles.catChipActive]}
-                            onPress={() => setActiveCategory(cat.id)}
-                        >
-                            <Text style={[styles.catText, activeCategory === cat.id && styles.catTextActive]}>
-                                {cat.label}
-                            </Text>
-                        </TouchableOpacity>
-                    ))}
-                </ScrollView>
-
-                {/* ── Most Popular ── */}
-                <View style={styles.sectionHeader}>
-                    <Text style={styles.sectionTitle}>Most Popular</Text>
-                    <TouchableOpacity><Text style={styles.seeAll}>See All</Text></TouchableOpacity>
-                </View>
-
-                <FlatList
-                    data={filtered}
-                    keyExtractor={item => item.id}
-                    numColumns={2}
-                    columnWrapperStyle={styles.columnWrapper}
-                    scrollEnabled={false}
-                    contentContainerStyle={styles.gridContainer}
-                    renderItem={({ item }) => (
-                        <PlantCard
-                            item={item}
-                            onPress={(plant) => navigation.navigate('ProductDetail', { plant })}
-                        />
-                    )}
-                    ListEmptyComponent={
-                        <View style={styles.emptyContainer}>
-                            <Ionicons name="leaf-outline" size={60} color={COLORS.border} />
-                            <Text style={styles.emptyText}>No plants found</Text>
-                        </View>
-                    }
-                />
-
-            </ScrollView>
+            </LayoutContainer>
         </SafeAreaView>
     );
 }
@@ -234,7 +243,7 @@ const styles = StyleSheet.create({
     catTextActive: { color: COLORS.white },
 
     gridContainer: { paddingHorizontal: SPACING.lg, paddingBottom: SPACING.xxl },
-    columnWrapper: { justifyContent: 'space-between', marginBottom: SPACING.md },
+    columnWrapper: { gap: SPACING.md, marginBottom: SPACING.md },
     emptyContainer: { alignItems: 'center', paddingVertical: SPACING.xxl },
     emptyText: { ...TYPOGRAPHY.body, color: COLORS.textLight, marginTop: SPACING.md },
 });

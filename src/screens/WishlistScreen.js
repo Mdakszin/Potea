@@ -5,8 +5,12 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import PlantCard from '../components/PlantCard';
 import { PLANTS } from '../constants/data';
+import LayoutContainer from '../components/LayoutContainer';
+import { useResponsive } from '../utils/responsive';
 
 export default function WishlistScreen({ navigation }) {
+    const { getColumns } = useResponsive();
+    const numColumns = getColumns();
     const [wishlist, setWishlist] = useState(PLANTS.filter((_, i) => [0, 2, 4, 6].includes(i))); // Seeded wishlist
 
     const handleToggle = (id, val) => {
@@ -15,50 +19,54 @@ export default function WishlistScreen({ navigation }) {
 
     return (
         <SafeAreaView style={styles.container}>
-            <View style={styles.header}>
-                <View style={styles.headerLeft}>
-                    <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-                        <Ionicons name="arrow-back" size={24} color={COLORS.text} />
-                    </TouchableOpacity>
-                    <Text style={styles.title}>My Wishlist</Text>
-                </View>
-                <TouchableOpacity style={styles.headerIcon}>
-                    <Ionicons name="search" size={24} color={COLORS.text} />
-                </TouchableOpacity>
-            </View>
-
-            <FlatList
-                data={wishlist}
-                keyExtractor={item => item.id}
-                numColumns={2}
-                columnWrapperStyle={styles.columnWrapper}
-                contentContainerStyle={styles.gridContainer}
-                renderItem={({ item }) => (
-                    <PlantCard
-                        item={{ ...item, isFavorite: true }}
-                        onPress={(plant) => navigation.navigate('ProductDetail', { plant })}
-                        onToggleFavorite={handleToggle}
-                    />
-                )}
-                ListHeaderComponent={
-                    wishlist.length > 0 ? (
-                        <View style={styles.listHeader}>
-                            <Text style={styles.countText}>{wishlist.length} Found</Text>
-                        </View>
-                    ) : null
-                }
-                ListEmptyComponent={
-                    <View style={styles.emptyContainer}>
-                        <View style={styles.emptyIconCircle}>
-                            <Ionicons name="heart-outline" size={60} color={COLORS.primary} />
-                        </View>
-                        <Text style={styles.emptyTitle}>Your Wishlist is Empty</Text>
-                        <Text style={styles.emptyText}>
-                            You don't have any items in your wishlist at the moment.
-                        </Text>
+            <LayoutContainer>
+                <View style={styles.header}>
+                    <View style={styles.headerLeft}>
+                        <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
+                            <Ionicons name="arrow-back" size={24} color={COLORS.text} />
+                        </TouchableOpacity>
+                        <Text style={styles.title}>My Wishlist</Text>
                     </View>
-                }
-            />
+                    <TouchableOpacity style={styles.headerIcon}>
+                        <Ionicons name="search" size={24} color={COLORS.text} />
+                    </TouchableOpacity>
+                </View>
+
+                <FlatList
+                    key={`grid-${numColumns}`}
+                    data={wishlist}
+                    keyExtractor={item => item.id}
+                    numColumns={numColumns}
+                    columnWrapperStyle={numColumns > 1 ? styles.columnWrapper : null}
+                    contentContainerStyle={styles.gridContainer}
+                    renderItem={({ item }) => (
+                        <PlantCard
+                            item={{ ...item, isFavorite: true }}
+                            style={numColumns > 1 ? { marginHorizontal: SPACING.xs } : { marginBottom: SPACING.md }}
+                            onPress={(plant) => navigation.navigate('ProductDetail', { plant })}
+                            onToggleFavorite={handleToggle}
+                        />
+                    )}
+                    ListHeaderComponent={
+                        wishlist.length > 0 ? (
+                            <View style={styles.listHeader}>
+                                <Text style={styles.countText}>{wishlist.length} Found</Text>
+                            </View>
+                        ) : null
+                    }
+                    ListEmptyComponent={
+                        <View style={styles.emptyContainer}>
+                            <View style={styles.emptyIconCircle}>
+                                <Ionicons name="heart-outline" size={60} color={COLORS.primary} />
+                            </View>
+                            <Text style={styles.emptyTitle}>Your Wishlist is Empty</Text>
+                            <Text style={styles.emptyText}>
+                                You don't have any items in your wishlist at the moment.
+                            </Text>
+                        </View>
+                    }
+                />
+            </LayoutContainer>
         </SafeAreaView>
     );
 }
@@ -76,7 +84,7 @@ const styles = StyleSheet.create({
     listHeader: { paddingHorizontal: SPACING.lg, marginBottom: SPACING.md },
     countText: { ...TYPOGRAPHY.bodySmall, fontWeight: '700', color: COLORS.text },
     gridContainer: { paddingHorizontal: SPACING.lg, paddingBottom: SPACING.xxl },
-    columnWrapper: { justifyContent: 'space-between', marginBottom: SPACING.md },
+    columnWrapper: { gap: SPACING.md, marginBottom: SPACING.md },
     emptyContainer: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingVertical: 100, paddingHorizontal: SPACING.xl },
     emptyIconCircle: { width: 120, height: 120, borderRadius: 60, backgroundColor: COLORS.primaryLight, alignItems: 'center', justifyContent: 'center', marginBottom: SPACING.xl },
     emptyTitle: { ...TYPOGRAPHY.h3, marginBottom: SPACING.md },

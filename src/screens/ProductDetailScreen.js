@@ -1,16 +1,17 @@
 import React, { useState } from 'react';
 import {
     View, Text, StyleSheet, Image, ScrollView,
-    TouchableOpacity, Dimensions
+    TouchableOpacity
 } from 'react-native';
 import { COLORS, TYPOGRAPHY, SPACING } from '../constants/theme';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import Button from '../components/Button';
-
-const { width } = Dimensions.get('window');
+import LayoutContainer from '../components/LayoutContainer';
+import { useResponsive } from '../utils/responsive';
 
 export default function ProductDetailScreen({ route, navigation }) {
+    const { isMobile } = useResponsive();
     const { plant } = route.params;
     const [selectedSize, setSelectedSize] = useState(plant.sizes[0]);
     const [quantity, setQuantity] = useState(1);
@@ -18,8 +19,8 @@ export default function ProductDetailScreen({ route, navigation }) {
 
     return (
         <SafeAreaView style={styles.container}>
-            <ScrollView showsVerticalScrollIndicator={false}>
-                {/* Header */}
+            <LayoutContainer>
+                {/* Header - Fixed at top */}
                 <View style={styles.header}>
                     <TouchableOpacity onPress={() => navigation.goBack()} style={styles.headerBtn}>
                         <Ionicons name="arrow-back" size={22} color={COLORS.text} />
@@ -30,136 +31,118 @@ export default function ProductDetailScreen({ route, navigation }) {
                     </TouchableOpacity>
                 </View>
 
-                {/* Image */}
-                <View style={styles.imageContainer}>
-                    <Image source={{ uri: plant.image }} style={styles.image} resizeMode="cover" />
-                </View>
-
-                {/* Info */}
-                <View style={styles.infoSection}>
-                    <View style={styles.nameRow}>
-                        <Text style={styles.plantName}>{plant.name}</Text>
-                        <Text style={styles.price}>${plant.price.toFixed(2)}</Text>
-                    </View>
-
-                    <View style={styles.ratingRow}>
-                        <Ionicons name="star" size={16} color="#FFB800" />
-                        <Text style={styles.rating}>{plant.rating}</Text>
-                        <Text style={styles.reviews}>({plant.reviews.toLocaleString()} reviews)</Text>
-                    </View>
-
-                    {/* Size Selector */}
-                    <Text style={styles.label}>Size</Text>
-                    <View style={styles.sizesRow}>
-                        {plant.sizes.map(s => (
-                            <TouchableOpacity
-                                key={s}
-                                style={[styles.sizeChip, selectedSize === s && styles.sizeChipActive]}
-                                onPress={() => setSelectedSize(s)}
-                            >
-                                <Text style={[styles.sizeText, selectedSize === s && styles.sizeTextActive]}>{s}</Text>
-                            </TouchableOpacity>
-                        ))}
-                    </View>
-
-                    {/* Description */}
-                    <Text style={styles.label}>About</Text>
-                    <Text style={styles.description}>{plant.description}</Text>
-
-                    {/* Quantity */}
-                    <View style={styles.quantityRow}>
-                        <Text style={styles.label}>Quantity</Text>
-                        <View style={styles.qtyControl}>
-                            <TouchableOpacity
-                                style={styles.qtyBtn}
-                                onPress={() => quantity > 1 && setQuantity(quantity - 1)}
-                            >
-                                <Ionicons name="remove" size={18} color={COLORS.text} />
-                            </TouchableOpacity>
-                            <Text style={styles.qtyText}>{quantity}</Text>
-                            <TouchableOpacity style={styles.qtyBtn} onPress={() => setQuantity(quantity + 1)}>
-                                <Ionicons name="add" size={18} color={COLORS.text} />
-                            </TouchableOpacity>
-                        </View>
-                    </View>
-
-                    {/* Reviews */}
-                    <View style={styles.reviewsSection}>
-                        <View style={styles.reviewsHeader}>
-                            <Text style={styles.label}>Reviews</Text>
-                            <TouchableOpacity>
-                                <Text style={styles.viewAll}>View All</Text>
-                            </TouchableOpacity>
+                <ScrollView showsVerticalScrollIndicator={false}>
+                    <View style={isMobile ? styles.mobileLayout : styles.desktopLayout}>
+                        {/* Image Section */}
+                        <View style={isMobile ? styles.imageContainerMobile : styles.imageContainerDesktop}>
+                            <Image source={{ uri: plant.image }} style={styles.image} resizeMode="cover" />
                         </View>
 
-                        {/* Rating Breakdown */}
-                        <View style={styles.ratingBreakdown}>
-                            <View style={styles.ratingSummary}>
-                                <Text style={styles.ratingLarge}>{plant.rating}</Text>
-                                <View style={styles.starsRowMedium}>
-                                    {[1, 2, 3, 4, 5].map(i => (
-                                        <Ionicons key={i} name="star" size={16} color="#FFB800" />
-                                    ))}
-                                </View>
-                                <Text style={styles.reviewsCountSmall}>{plant.reviews.toLocaleString()} reviews</Text>
+                        {/* Info Section */}
+                        <View style={isMobile ? styles.infoSectionMobile : styles.infoSectionDesktop}>
+                            <View style={styles.nameRow}>
+                                <Text style={styles.plantName}>{plant.name}</Text>
+                                <Text style={styles.price}>${plant.price.toFixed(2)}</Text>
                             </View>
-                            <View style={styles.ratingBars}>
-                                {[5, 4, 3, 2, 1].map(star => (
-                                    <View key={star} style={styles.barRow}>
-                                        <Text style={styles.starNum}>{star}</Text>
-                                        <View style={styles.barEmpty}>
-                                            <View style={[styles.barFill, { width: `${Math.random() * 80 + 20}%` }]} />
-                                        </View>
-                                    </View>
+
+                            <View style={styles.ratingRow}>
+                                <Ionicons name="star" size={16} color="#FFB800" />
+                                <Text style={styles.rating}>{plant.rating}</Text>
+                                <Text style={styles.reviews}>({plant.reviews.toLocaleString()} reviews)</Text>
+                            </View>
+
+                            {/* Size Selector */}
+                            <Text style={styles.label}>Size</Text>
+                            <View style={styles.sizesRow}>
+                                {plant.sizes.map(s => (
+                                    <TouchableOpacity
+                                        key={s}
+                                        style={[styles.sizeChip, selectedSize === s && styles.sizeChipActive]}
+                                        onPress={() => setSelectedSize(s)}
+                                    >
+                                        <Text style={[styles.sizeText, selectedSize === s && styles.sizeTextActive]}>{s}</Text>
+                                    </TouchableOpacity>
                                 ))}
                             </View>
-                        </View>
 
-                        <View style={styles.reviewCard}>
-                            <View style={styles.reviewerHeader}>
-                                <Image
-                                    source={{ uri: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=100&q=80' }}
-                                    style={styles.reviewerAvatar}
-                                />
-                                <View style={styles.reviewerInfo}>
-                                    <Text style={styles.reviewerName}>Charley Robertson</Text>
-                                    <View style={styles.starsRow}>
-                                        {[1, 2, 3, 4, 5].map(i => (
-                                            <Ionicons key={i} name="star" size={12} color="#FFB800" />
+                            {/* Description */}
+                            <Text style={styles.label}>About</Text>
+                            <Text style={styles.description}>{plant.description}</Text>
+
+                            {/* Quantity */}
+                            <View style={styles.quantityRow}>
+                                <Text style={styles.label}>Quantity</Text>
+                                <View style={styles.qtyControl}>
+                                    <TouchableOpacity
+                                        style={styles.qtyBtn}
+                                        onPress={() => quantity > 1 && setQuantity(quantity - 1)}
+                                    >
+                                        <Ionicons name="remove" size={18} color={COLORS.text} />
+                                    </TouchableOpacity>
+                                    <Text style={styles.qtyText}>{quantity}</Text>
+                                    <TouchableOpacity style={styles.qtyBtn} onPress={() => setQuantity(quantity + 1)}>
+                                        <Ionicons name="add" size={18} color={COLORS.text} />
+                                    </TouchableOpacity>
+                                </View>
+                            </View>
+
+                            {/* Reviews */}
+                            <View style={styles.reviewsSection}>
+                                <View style={styles.reviewsHeader}>
+                                    <Text style={styles.label}>Reviews</Text>
+                                    <TouchableOpacity>
+                                        <Text style={styles.viewAll}>View All</Text>
+                                    </TouchableOpacity>
+                                </View>
+
+                                {/* Rating Breakdown */}
+                                <View style={styles.ratingBreakdown}>
+                                    <View style={styles.ratingSummary}>
+                                        <Text style={styles.ratingLarge}>{plant.rating}</Text>
+                                        <View style={styles.starsRowMedium}>
+                                            {[1, 2, 3, 4, 5].map(i => (
+                                                <Ionicons key={i} name="star" size={16} color="#FFB800" />
+                                            ))}
+                                        </View>
+                                        <Text style={styles.reviewsCountSmall}>{plant.reviews.toLocaleString()} reviews</Text>
+                                    </View>
+                                    <View style={styles.ratingBars}>
+                                        {[5, 4, 3, 2, 1].map(star => (
+                                            <View key={star} style={styles.barRow}>
+                                                <Text style={styles.starNum}>{star}</Text>
+                                                <View style={styles.barEmpty}>
+                                                    <View style={[styles.barFill, { width: `${Math.random() * 80 + 20}%` }]} />
+                                                </View>
+                                            </View>
                                         ))}
                                     </View>
                                 </View>
-                                <Text style={styles.reviewTime}>2 days ago</Text>
-                            </View>
-                            <Text style={styles.reviewText}>
-                                The plant is very healthy and beautiful. The packaging was very safe and the delivery was fast. Highly recommended!
-                            </Text>
-                        </View>
 
-                        <View style={styles.reviewCard}>
-                            <View style={styles.reviewerHeader}>
-                                <Image
-                                    source={{ uri: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=100&q=80' }}
-                                    style={styles.reviewerAvatar}
-                                />
-                                <View style={styles.reviewerInfo}>
-                                    <Text style={styles.reviewerName}>Benny Spanbauer</Text>
-                                    <View style={styles.starsRow}>
-                                        {[1, 2, 3, 4].map(i => (
-                                            <Ionicons key={i} name="star" size={12} color="#FFB800" />
-                                        ))}
-                                        <Ionicons name="star-outline" size={12} color="#FFB800" />
+                                <View style={styles.reviewCard}>
+                                    <View style={styles.reviewerHeader}>
+                                        <Image
+                                            source={{ uri: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=100&q=80' }}
+                                            style={styles.reviewerAvatar}
+                                        />
+                                        <View style={styles.reviewerInfo}>
+                                            <Text style={styles.reviewerName}>Charley Robertson</Text>
+                                            <View style={styles.starsRow}>
+                                                {[1, 2, 3, 4, 5].map(i => (
+                                                    <Ionicons key={i} name="star" size={12} color="#FFB800" />
+                                                ))}
+                                            </View>
+                                        </View>
+                                        <Text style={styles.reviewTime}>2 days ago</Text>
                                     </View>
+                                    <Text style={styles.reviewText}>
+                                        The plant is very healthy and beautiful. The packaging was very safe and the delivery was fast. Highly recommended!
+                                    </Text>
                                 </View>
-                                <Text style={styles.reviewTime}>a week ago</Text>
                             </View>
-                            <Text style={styles.reviewText}>
-                                Good plant, slightly smaller than expected but still very nice.
-                            </Text>
                         </View>
                     </View>
-                </View>
-            </ScrollView>
+                </ScrollView>
+            </LayoutContainer>
 
             {/* Footer Buttons */}
             <View style={styles.footer}>
@@ -183,12 +166,18 @@ const styles = StyleSheet.create({
         borderWidth: 1, borderColor: COLORS.border,
         alignItems: 'center', justifyContent: 'center',
     },
-    headerTitle: { ...TYPOGRAPHY.h3 },
-    imageContainer: {
-        width: width, height: width * 0.8, backgroundColor: COLORS.primaryLight,
-    },
+    headerTitle: { ...TYPOGRAPHY.h3, color: COLORS.text, flex: 1, textAlign: 'center' },
+
+    mobileLayout: { flex: 1 },
+    desktopLayout: { flexDirection: 'row', gap: SPACING.xl, padding: SPACING.xl },
+
+    imageContainerMobile: { width: '100%', height: 400 },
+    imageContainerDesktop: { flex: 1, height: 600, borderRadius: 24, overflow: 'hidden' },
+
     image: { width: '100%', height: '100%' },
-    infoSection: { padding: SPACING.lg },
+
+    infoSectionMobile: { padding: SPACING.xl },
+    infoSectionDesktop: { flex: 1.2, paddingVertical: 0 },
     nameRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: SPACING.sm },
     plantName: { ...TYPOGRAPHY.h2, flex: 1, marginRight: SPACING.sm },
     price: { ...TYPOGRAPHY.h2, color: COLORS.primary },

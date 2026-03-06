@@ -1,5 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity, ScrollView, ActivityIndicator, Alert } from 'react-native';
+import {
+    View, Text, StyleSheet, Image, TouchableOpacity,
+    ScrollView, ActivityIndicator, Alert, Platform
+} from 'react-native';
 import { COLORS, TYPOGRAPHY, SPACING } from '../constants/theme';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -8,6 +11,9 @@ import Button from '../components/Button';
 import { useAuth } from '../contexts/AuthContext';
 import { db } from '../config/firebase';
 import { doc, updateDoc } from 'firebase/firestore';
+import * as ImagePicker from 'expo-image-picker';
+import * as FileSystem from 'expo-file-system';
+import * as ImageManipulator from 'expo-image-manipulator';
 
 export default function EditProfileScreen({ navigation }) {
     const { currentUser, userData, setUserData } = useAuth();
@@ -18,8 +24,11 @@ export default function EditProfileScreen({ navigation }) {
     const [phone, setPhone] = useState(userData?.phone || '');
     const [gender, setGender] = useState(userData?.gender || '');
     const [dob, setDob] = useState(userData?.dob || '');
-
+    const [avatarUri, setAvatarUri] = useState(
+        userData?.avatar || currentUser?.photoURL || null
+    );
     const [loading, setLoading] = useState(false);
+    const [uploadingAvatar, setUploadingAvatar] = useState(false);
 
     useEffect(() => {
         if (userData) {
@@ -29,8 +38,89 @@ export default function EditProfileScreen({ navigation }) {
             setPhone(userData.phone || '');
             setGender(userData.gender || '');
             setDob(userData.dob || '');
+            setAvatarUri(userData.avatar || currentUser?.photoURL || null);
         }
     }, [userData]);
+
+    const handlePickAvatar = async () => {
+        // Request permission
+        if (Platform.OS !== 'web') {
+            const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+            if (status !== 'granted') {
+                Alert.alert('Permission Required', 'Please allow access to your photo library to change your avatar.');
+                return;
+            }
+        }
+
+        const result = await ImagePicker.launchImageLibraryAsync({
+            // Fix: Use ImagePicker.MediaType.Images instead of MediaTypeOptions (deprecated)
+            mediaTypes: ImagePicker.MediaType.IMAGES,
+            allowsEditing: true,
+            aspect: [1, 1],
+            quality: 0.5,
+        });
+
+        if (!result.canceled && result.assets.length > 0) {
+            const pickedUri = result.assets[0].uri;
+            await processAvatar(pickedUri);
+        }
+    };
+
+    const processAvatar = async (localUri) => {
+        if (!currentUser) return;
+
+        try {
+            setUploadingAvatar(true);
+
+            // Resize image to ensure Base64 string stays under Firestore 1MB limit
+            // A 400x400 image is sufficient for a profile picture
+            const manipulatedImage = await ImageManipulator.manipulateAsync(
+                localUri,
+                [{ resize: { width: 400, height: 400 } }],
+                { compress: 0.7, format: ImageManipulator.SaveFormat.JPEG }
+            );
+
+            const resizeUri = manipulatedImage.uri;
+
+            let base64Data;
+            if (Platform.OS === 'web') {
+                const response = await fetch(resizeUri);
+                const blob = await response.blob();
+                base64Data = await new Promise((resolve) => {
+                    const reader = new FileReader();
+                    reader.onloadend = () => resolve(reader.result);
+                    reader.readAsDataURL(blob);
+                });
+            } else {
+                const base64 = await FileSystem.readAsStringAsync(resizeUri, {
+                    encoding: FileSystem.EncodingType.Base64,
+                });
+                base64Data = `data:image/jpeg;base64,${base64}`;
+            }
+
+            // Save Base64 directly to Firestore (Fallback for when Storage is unavailable)
+            const userRef = doc(db, 'users', currentUser.uid);
+            await updateDoc(userRef, { avatar: base64Data });
+
+            // Update local state and context
+            setAvatarUri(base64Data);
+            if (setUserData) {
+                setUserData({ ...userData, avatar: base64Data });
+            }
+
+            Alert.alert('Success', 'Profile photo updated!');
+        } catch (error) {
+            console.error('Avatar processing failed:', error);
+            // Check if it's a Firestore size limit error
+            if (error.message?.includes('payload size exceeds')) {
+                Alert.alert('Error', 'The photo is too large. Please try a different or smaller image.');
+            } else {
+                Alert.alert('Update Failed', 'Could not save your photo. Please try again.');
+            }
+        } finally {
+            setUploadingAvatar(false);
+        }
+    };
 
     const handleUpdate = async () => {
         if (!currentUser) return;
@@ -45,12 +135,10 @@ export default function EditProfileScreen({ navigation }) {
                 phone,
                 gender,
                 dob,
-                // Email is usually handled via Auth provider separately, but saving here for reference
             };
 
             await updateDoc(userRef, updatedData);
 
-            // Update local context
             if (setUserData) {
                 setUserData({ ...userData, ...updatedData });
             }
@@ -65,6 +153,9 @@ export default function EditProfileScreen({ navigation }) {
         }
     };
 
+    const resolvedAvatar = avatarUri
+        || `https://ui-avatars.com/api/?name=${encodeURIComponent(name || 'User')}&background=4CAF50&color=fff&size=200`;
+
     return (
         <SafeAreaView style={styles.container}>
             <View style={styles.header}>
@@ -77,15 +168,16 @@ export default function EditProfileScreen({ navigation }) {
 
             <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
                 <View style={styles.avatarSection}>
-                    <View style={styles.avatarWrapper}>
-                        <Image
-                            source={{ uri: userData?.avatar || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(name || 'User') + '&background=random' }}
-                            style={styles.avatar}
-                        />
-                        <TouchableOpacity style={styles.editBadge}>
-                            <Ionicons name="pencil" size={16} color={COLORS.white} />
-                        </TouchableOpacity>
-                    </View>
+                    <TouchableOpacity style={styles.avatarWrapper} onPress={handlePickAvatar} disabled={uploadingAvatar}>
+                        <Image source={{ uri: resolvedAvatar }} style={styles.avatar} />
+                        <View style={styles.editBadge}>
+                            {uploadingAvatar
+                                ? <ActivityIndicator size="small" color={COLORS.white} />
+                                : <Ionicons name="camera" size={16} color={COLORS.white} />
+                            }
+                        </View>
+                    </TouchableOpacity>
+                    <Text style={styles.avatarHint}>Tap to change photo</Text>
                 </View>
 
                 <View style={styles.form}>
@@ -108,7 +200,7 @@ export default function EditProfileScreen({ navigation }) {
                     <TextField
                         placeholder="Email"
                         value={email}
-                        editable={false} // Prevent manual email change here without Auth re-auth
+                        editable={false}
                         rightIcon="mail-outline"
                     />
                     <TextField
@@ -130,7 +222,7 @@ export default function EditProfileScreen({ navigation }) {
                 <Button
                     title={loading ? "Updating..." : "Update"}
                     onPress={handleUpdate}
-                    disabled={loading}
+                    disabled={loading || uploadingAvatar}
                 />
             </View>
         </SafeAreaView>
@@ -153,6 +245,11 @@ const styles = StyleSheet.create({
         position: 'absolute', bottom: 4, right: 4,
         backgroundColor: COLORS.primary, width: 32, height: 32, borderRadius: 10,
         alignItems: 'center', justifyContent: 'center', borderWidth: 3, borderColor: COLORS.white,
+    },
+    avatarHint: {
+        ...TYPOGRAPHY.bodySmall,
+        color: COLORS.textLight,
+        marginTop: SPACING.sm,
     },
     form: { gap: SPACING.md },
     footer: {

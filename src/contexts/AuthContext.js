@@ -4,7 +4,8 @@ import {
     createUserWithEmailAndPassword,
     signInWithEmailAndPassword,
     signOut,
-    onAuthStateChanged
+    onAuthStateChanged,
+    updateProfile
 } from 'firebase/auth';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 
@@ -23,6 +24,9 @@ export function AuthProvider({ children }) {
         try {
             const userCredential = await createUserWithEmailAndPassword(auth, email, password);
             const user = userCredential.user;
+
+            // Set displayName on Firebase Auth profile immediately
+            await updateProfile(user, { displayName: name });
 
             // Create a user document in Firestore
             await setDoc(doc(db, 'users', user.uid), {

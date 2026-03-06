@@ -3,9 +3,8 @@ import { View, Text, StyleSheet, Image, TouchableOpacity, ScrollView } from 'rea
 import { COLORS, TYPOGRAPHY, SPACING } from '../constants/theme';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import Button from '../components/Button';
-
 import LayoutContainer from '../components/LayoutContainer';
+import { useAuth } from '../contexts/AuthContext';
 
 const MENU_ITEMS = [
     { id: '0', icon: 'document-text-outline', label: 'My Orders', target: 'Orders' },
@@ -22,6 +21,24 @@ const MENU_ITEMS = [
 ];
 
 export default function ProfileScreen({ navigation }) {
+    const { currentUser, userData, logout } = useAuth();
+
+    // Resolve display values — Firestore userData takes priority, fallback to Firebase Auth fields
+    const displayName = userData?.name || currentUser?.displayName || 'User';
+    const displayEmail = userData?.email || currentUser?.email || '';
+    const avatarUri = userData?.avatar
+        || currentUser?.photoURL
+        || `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=4CAF50&color=fff&size=200`;
+
+    const handleLogout = async () => {
+        try {
+            await logout();
+            // AuthContext listener will clear currentUser → App.js routes to auth screens
+        } catch (error) {
+            console.error('Logout failed:', error);
+        }
+    };
+
     return (
         <SafeAreaView style={styles.container}>
             <LayoutContainer>
@@ -34,20 +51,23 @@ export default function ProfileScreen({ navigation }) {
                     <View style={styles.profileSection}>
                         <View style={styles.avatarWrapper}>
                             <Image
-                                source={{ uri: 'https://images.unsplash.com/photo-1547425260-76bcadfb4f2c?auto=format&fit=crop&w=200&q=80' }}
+                                source={{ uri: avatarUri }}
                                 style={styles.avatar}
                             />
-                            <TouchableOpacity style={styles.editBadge}>
+                            <TouchableOpacity
+                                style={styles.editBadge}
+                                onPress={() => navigation.navigate('EditProfile')}
+                            >
                                 <Ionicons name="pencil" size={14} color={COLORS.white} />
                             </TouchableOpacity>
                         </View>
-                        <Text style={styles.name}>Andrew Ainsley</Text>
-                        <Text style={styles.email}>andrew_ainsley@yourdomain.com</Text>
+                        <Text style={styles.name}>{displayName}</Text>
+                        <Text style={styles.email}>{displayEmail}</Text>
                     </View>
 
                     {/* Menu items */}
                     <View style={styles.menuContainer}>
-                        {MENU_ITEMS.map((item, idx) => (
+                        {MENU_ITEMS.map((item) => (
                             <TouchableOpacity
                                 key={item.id}
                                 style={styles.menuItem}
@@ -70,10 +90,10 @@ export default function ProfileScreen({ navigation }) {
                             </TouchableOpacity>
                         ))}
 
-                        {/* Logout with special color */}
+                        {/* Logout */}
                         <TouchableOpacity
                             style={[styles.menuItem, { borderBottomWidth: 0 }]}
-                            onPress={() => navigation.replace('LetsYouIn')}
+                            onPress={handleLogout}
                         >
                             <View style={styles.menuLeft}>
                                 <Ionicons name="log-out-outline" size={24} color="#FF4D4D" />
@@ -86,6 +106,7 @@ export default function ProfileScreen({ navigation }) {
         </SafeAreaView>
     );
 }
+
 
 const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: COLORS.white },

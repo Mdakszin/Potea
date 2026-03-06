@@ -8,6 +8,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import PlantCard from '../components/PlantCard';
 import Button from '../components/Button';
+import FilterModal from '../components/FilterModal';
 import { PLANTS, CATEGORIES } from '../constants/data';
 import LayoutContainer from '../components/LayoutContainer';
 import { useResponsive } from '../utils/responsive';

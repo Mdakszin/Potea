@@ -1,18 +1,69 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity, ScrollView } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, Image, TouchableOpacity, ScrollView, ActivityIndicator, Alert } from 'react-native';
 import { COLORS, TYPOGRAPHY, SPACING } from '../constants/theme';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import TextField from '../components/TextField';
 import Button from '../components/Button';
+import { useAuth } from '../contexts/AuthContext';
+import { db } from '../config/firebase';
+import { doc, updateDoc } from 'firebase/firestore';
 
 export default function EditProfileScreen({ navigation }) {
-    const [name, setName] = useState('Andrew Ainsley');
-    const [nickname, setNickname] = useState('Andrew');
-    const [email, setEmail] = useState('andrew_ainsley@yourdomain.com');
-    const [phone, setPhone] = useState('+1 111 467 378 399');
-    const [gender, setGender] = useState('Male');
-    const [dob, setDob] = useState('12/27/1995');
+    const { currentUser, userData, setUserData } = useAuth();
+
+    const [name, setName] = useState(userData?.name || '');
+    const [nickname, setNickname] = useState(userData?.nickname || '');
+    const [email, setEmail] = useState(userData?.email || currentUser?.email || '');
+    const [phone, setPhone] = useState(userData?.phone || '');
+    const [gender, setGender] = useState(userData?.gender || '');
+    const [dob, setDob] = useState(userData?.dob || '');
+
+    const [loading, setLoading] = useState(false);
+
+    useEffect(() => {
+        if (userData) {
+            setName(userData.name || '');
+            setNickname(userData.nickname || '');
+            setEmail(userData.email || '');
+            setPhone(userData.phone || '');
+            setGender(userData.gender || '');
+            setDob(userData.dob || '');
+        }
+    }, [userData]);
+
+    const handleUpdate = async () => {
+        if (!currentUser) return;
+
+        try {
+            setLoading(true);
+            const userRef = doc(db, 'users', currentUser.uid);
+
+            const updatedData = {
+                name,
+                nickname,
+                phone,
+                gender,
+                dob,
+                // Email is usually handled via Auth provider separately, but saving here for reference
+            };
+
+            await updateDoc(userRef, updatedData);
+
+            // Update local context
+            if (setUserData) {
+                setUserData({ ...userData, ...updatedData });
+            }
+
+            Alert.alert('Success', 'Profile updated successfully!');
+            navigation.goBack();
+        } catch (error) {
+            console.error('Error updating profile:', error);
+            Alert.alert('Error', 'Failed to update profile.');
+        } finally {
+            setLoading(false);
+        }
+    };
 
     return (
         <SafeAreaView style={styles.container}>
@@ -28,7 +79,7 @@ export default function EditProfileScreen({ navigation }) {
                 <View style={styles.avatarSection}>
                     <View style={styles.avatarWrapper}>
                         <Image
-                            source={{ uri: 'https://images.unsplash.com/photo-1547425260-76bcadfb4f2c?auto=format&fit=crop&w=200&q=80' }}
+                            source={{ uri: userData?.avatar || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(name || 'User') + '&background=random' }}
                             style={styles.avatar}
                         />
                         <TouchableOpacity style={styles.editBadge}>
@@ -57,7 +108,7 @@ export default function EditProfileScreen({ navigation }) {
                     <TextField
                         placeholder="Email"
                         value={email}
-                        onChangeText={setEmail}
+                        editable={false} // Prevent manual email change here without Auth re-auth
                         rightIcon="mail-outline"
                     />
                     <TextField
@@ -76,7 +127,11 @@ export default function EditProfileScreen({ navigation }) {
             </ScrollView>
 
             <View style={styles.footer}>
-                <Button title="Update" onPress={() => navigation.goBack()} />
+                <Button
+                    title={loading ? "Updating..." : "Update"}
+                    onPress={handleUpdate}
+                    disabled={loading}
+                />
             </View>
         </SafeAreaView>
     );

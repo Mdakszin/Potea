@@ -28,21 +28,9 @@ export default function LetsYouInScreen({ navigation }) {
                 <View style={styles.socialButtonsContainer}>
                     <Button
                         variant="social"
-                        title="Continue with Facebook"
-                        style={styles.socialButton}
-                        icon={<Ionicons name="logo-facebook" size={24} color="#1877F2" />}
-                    />
-                    <Button
-                        variant="social"
                         title="Continue with Google"
                         style={styles.socialButton}
                         icon={<Image source={{ uri: 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/53/Google_%22G%22_Logo.svg/512px-Google_%22G%22_Logo.svg.png' }} style={{ width: 24, height: 24 }} />}
-                    />
-                    <Button
-                        variant="social"
-                        title="Continue with Apple"
-                        style={styles.socialButton}
-                        icon={<Ionicons name="logo-apple" size={24} color={COLORS.text} />}
                     />
                 </View>
 

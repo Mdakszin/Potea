@@ -1,39 +1,66 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, KeyboardAvoidingView, Platform, Image } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, KeyboardAvoidingView, Platform, Image, ActivityIndicator } from 'react-native';
 import { COLORS, TYPOGRAPHY, SPACING } from '../constants/theme';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-
-const INITIAL_MESSAGES = [
-    { id: '1', text: 'Hello, how can I help you today?', sender: 'agent', time: '10:00 AM' },
-    { id: '2', text: 'I have a question about my last order.', sender: 'user', time: '10:01 AM' },
-    { id: '3', text: 'Sure! Please provide your order ID.', sender: 'agent', time: '10:01 AM' },
-];
+import { db } from '../config/firebase';
+import { collection, addDoc, query, orderBy, onSnapshot, serverTimestamp } from 'firebase/firestore';
+import { useAuth } from '../contexts/AuthContext';
 
 export default function CustomerServiceChatScreen({ navigation }) {
-    const [messages, setMessages] = useState(INITIAL_MESSAGES);
+    const { currentUser } = useAuth();
+    const [messages, setMessages] = useState([]);
     const [input, setInput] = useState('');
+    const [loading, setLoading] = useState(true);
+    const scrollViewRef = useRef();
 
-    const sendMessage = () => {
-        if (!input.trim()) return;
-        const newUserMsg = {
-            id: Date.now().toString(),
-            text: input,
-            sender: 'user',
-            time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-        };
-        setMessages([...messages, newUserMsg]);
+    useEffect(() => {
+        if (!currentUser) return;
+
+        const messagesRef = collection(db, 'chats', currentUser.uid, 'messages');
+        const q = query(messagesRef, orderBy('createdAt', 'asc'));
+
+        const unsubscribe = onSnapshot(q, (snapshot) => {
+            const msgs = snapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data(),
+            }));
+            setMessages(msgs);
+            setLoading(false);
+        });
+
+        // Initialize with welcome message if chat is empty
+        return () => unsubscribe();
+    }, [currentUser]);
+
+    const sendMessage = async () => {
+        if (!input.trim() || !currentUser) return;
+
+        const text = input;
         setInput('');
 
-        // Mock auto-reply
-        setTimeout(() => {
-            const agentReply = {
-                id: (Date.now() + 1).toString(),
-                text: 'Thank you for the information. Let me check that for you.',
+        const messagesRef = collection(db, 'chats', currentUser.uid, 'messages');
+
+        const now = new Date();
+        const timeString = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+        // Add user message to Firestore
+        await addDoc(messagesRef, {
+            text: text,
+            sender: 'user',
+            time: timeString,
+            createdAt: serverTimestamp()
+        });
+
+        // Mock auto-reply written to Firestore
+        setTimeout(async () => {
+            const agentTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            await addDoc(messagesRef, {
+                text: 'Thank you for your message. An agent will be with you shortly.',
                 sender: 'agent',
-                time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-            };
-            setMessages(prev => [...prev, agentReply]);
+                time: agentTime,
+                createdAt: serverTimestamp()
+            });
         }, 1500);
     };
 
@@ -60,9 +87,24 @@ export default function CustomerServiceChatScreen({ navigation }) {
 
             <ScrollView
                 contentContainerStyle={styles.chatContent}
-                ref={ref => { this.scrollView = ref; }}
-                onContentSizeChange={() => this.scrollView.scrollToEnd({ animated: true })}
+                ref={scrollViewRef}
+                onContentSizeChange={() => scrollViewRef.current?.scrollToEnd({ animated: true })}
             >
+                {loading && (
+                    <View style={{ padding: 20, alignItems: 'center' }}>
+                        <ActivityIndicator size="small" color={COLORS.primary} />
+                    </View>
+                )}
+                {!loading && messages.length === 0 && (
+                    <View style={styles.messageContainer}>
+                        <View style={[styles.bubble, styles.agentBubble]}>
+                            <Text style={[styles.messageText, styles.agentText]}>
+                                Hello! How can we help you today?
+                            </Text>
+                        </View>
+                        <Text style={styles.messageTime}>Now</Text>
+                    </View>
+                )}
                 {messages.map((msg) => (
                     <View
                         key={msg.id}
@@ -137,7 +179,7 @@ const styles = StyleSheet.create({
     messageTime: { fontSize: 10, color: COLORS.textLight, marginTop: 4 },
     inputContainer: {
         flexDirection: 'row', alignItems: 'center', padding: SPACING.md,
-        background: COLORS.white, borderTopWidth: 1, borderTopColor: COLORS.border,
+        backgroundColor: COLORS.white, borderTopWidth: 1, borderTopColor: COLORS.border,
         gap: 12, paddingBottom: Platform.OS === 'ios' ? 30 : 16,
     },
     attachBtn: { width: 44, height: 44, borderRadius: 22, backgroundColor: COLORS.card, alignItems: 'center', justifyContent: 'center' },

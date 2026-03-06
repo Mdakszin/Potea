@@ -1,16 +1,40 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image, ActivityIndicator } from 'react-native';
 import { COLORS, TYPOGRAPHY, SPACING } from '../constants/theme';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Button from '../components/Button';
 import TextField from '../components/TextField';
 import Checkbox from '../components/Checkbox';
 import { Ionicons } from '@expo/vector-icons';
+import { useAuth } from '../contexts/AuthContext';
 
 export default function SignInScreen({ navigation }) {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [rememberMe, setRememberMe] = useState(false);
+
+    const { login } = useAuth();
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState(null);
+
+    const handleSignIn = async () => {
+        if (!email || !password) {
+            setError('Please enter your email and password');
+            return;
+        }
+
+        try {
+            setError(null);
+            setLoading(true);
+            await login(email, password);
+            // On success, App.js routes to Main App automatically
+        } catch (err) {
+            console.error(err);
+            setError('Invalid email or password');
+        } finally {
+            setLoading(false);
+        }
+    };
 
     return (
         <SafeAreaView style={styles.container}>
@@ -35,6 +59,7 @@ export default function SignInScreen({ navigation }) {
                         onChangeText={setEmail}
                         style={styles.input}
                         keyboardType="email-address"
+                        autoCapitalize="none"
                     />
 
                     <TextField
@@ -54,10 +79,13 @@ export default function SignInScreen({ navigation }) {
                         />
                     </View>
 
+                    {error && <Text style={styles.errorText}>{error}</Text>}
+
                     <Button
-                        title="Sign in"
-                        onPress={() => console.log('Sign in', { email, password })}
+                        title={loading ? "Signing in..." : "Sign in"}
+                        onPress={handleSignIn}
                         style={styles.signInButton}
+                        disabled={loading}
                     />
 
                     <TouchableOpacity onPress={() => navigation.navigate('ForgotPassword')}>
@@ -73,13 +101,7 @@ export default function SignInScreen({ navigation }) {
 
                 <View style={styles.socialButtonsRow}>
                     <TouchableOpacity style={styles.socialIconBtn}>
-                        <Ionicons name="logo-facebook" size={24} color="#1877F2" />
-                    </TouchableOpacity>
-                    <TouchableOpacity style={styles.socialIconBtn}>
                         <Image source={{ uri: 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/53/Google_%22G%22_Logo.svg/512px-Google_%22G%22_Logo.svg.png' }} style={{ width: 24, height: 24 }} />
-                    </TouchableOpacity>
-                    <TouchableOpacity style={styles.socialIconBtn}>
-                        <Ionicons name="logo-apple" size={24} color={COLORS.text} />
                     </TouchableOpacity>
                 </View>
 

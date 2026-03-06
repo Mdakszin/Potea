@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, Image, TouchableOpacity, Dimensions, Platform } from 'react-native';
 import { COLORS, TYPOGRAPHY, SPACING } from '../constants/theme';
 import { Ionicons } from '@expo/vector-icons';
 
@@ -57,13 +57,12 @@ const styles = StyleSheet.create({
         backgroundColor: COLORS.white,
         borderRadius: 16,
         overflow: 'hidden',
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.06,
-        shadowRadius: 8,
-        elevation: 3,
         borderWidth: 1,
         borderColor: COLORS.border,
+        ...Platform.select({
+            web: { boxShadow: '0px 2px 8px rgba(0,0,0,0.06)' },
+            default: { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 8, elevation: 3 }
+        }),
     },
     imageContainer: {
         width: '100%',
@@ -85,10 +84,10 @@ const styles = StyleSheet.create({
         height: 30,
         alignItems: 'center',
         justifyContent: 'center',
-        shadowColor: '#000',
-        shadowOpacity: 0.1,
-        shadowRadius: 4,
-        elevation: 2,
+        ...Platform.select({
+            web: { boxShadow: '0px 0px 4px rgba(0,0,0,0.1)' },
+            default: { shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 4, elevation: 2 }
+        }),
     },
     info: {
         padding: SPACING.sm,

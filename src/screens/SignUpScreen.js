@@ -1,16 +1,42 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image, ActivityIndicator } from 'react-native';
 import { COLORS, TYPOGRAPHY, SPACING } from '../constants/theme';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Button from '../components/Button';
 import TextField from '../components/TextField';
 import Checkbox from '../components/Checkbox';
 import { Ionicons } from '@expo/vector-icons';
+import { useAuth } from '../contexts/AuthContext';
 
 export default function SignUpScreen({ navigation }) {
+    const [name, setName] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [rememberMe, setRememberMe] = useState(false);
+
+    const { register } = useAuth();
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState(null);
+
+    const handleSignUp = async () => {
+        if (!email || !password || !name) {
+            setError('Please fill in all fields');
+            return;
+        }
+
+        try {
+            setError(null);
+            setLoading(true);
+            await register(email, password, name);
+            // On success, AuthContext triggers currentUser update
+            // App.js routing will automatically switch to Main App
+        } catch (err) {
+            console.error(err);
+            setError(err.message || 'Failed to create an account');
+        } finally {
+            setLoading(false);
+        }
+    };
 
     return (
         <SafeAreaView style={styles.container}>
@@ -29,12 +55,21 @@ export default function SignUpScreen({ navigation }) {
 
                 <View style={styles.formContainer}>
                     <TextField
+                        icon="person"
+                        placeholder="Full Name"
+                        value={name}
+                        onChangeText={setName}
+                        style={styles.input}
+                    />
+
+                    <TextField
                         icon="mail"
                         placeholder="Email"
                         value={email}
                         onChangeText={setEmail}
                         style={styles.input}
                         keyboardType="email-address"
+                        autoCapitalize="none"
                     />
 
                     <TextField
@@ -54,13 +89,13 @@ export default function SignUpScreen({ navigation }) {
                         />
                     </View>
 
+                    {error && <Text style={styles.errorText}>{error}</Text>}
+
                     <Button
-                        title="Sign up"
-                        onPress={() => {
-                            console.log('Sign up', { email, password });
-                            navigation.navigate('FillProfile');
-                        }}
+                        title={loading ? "Signing up..." : "Sign up"}
+                        onPress={handleSignUp}
                         style={styles.signUpButton}
+                        disabled={loading}
                     />
                 </View>
 
@@ -72,13 +107,7 @@ export default function SignUpScreen({ navigation }) {
 
                 <View style={styles.socialButtonsRow}>
                     <TouchableOpacity style={styles.socialIconBtn}>
-                        <Ionicons name="logo-facebook" size={24} color="#1877F2" />
-                    </TouchableOpacity>
-                    <TouchableOpacity style={styles.socialIconBtn}>
                         <Image source={{ uri: 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/53/Google_%22G%22_Logo.svg/512px-Google_%22G%22_Logo.svg.png' }} style={{ width: 24, height: 24 }} />
-                    </TouchableOpacity>
-                    <TouchableOpacity style={styles.socialIconBtn}>
-                        <Ionicons name="logo-apple" size={24} color={COLORS.text} />
                     </TouchableOpacity>
                 </View>
 

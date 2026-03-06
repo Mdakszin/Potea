@@ -54,22 +54,32 @@ import HelpCenterScreen from './src/screens/HelpCenterScreen';
 import CustomerServiceChatScreen from './src/screens/CustomerServiceChatScreen';
 import InviteFriendsScreen from './src/screens/InviteFriendsScreen';
 
+import { AuthProvider, useAuth } from './src/contexts/AuthContext';
+import { ActivityIndicator, View } from 'react-native';
+import { COLORS } from './src/constants/theme';
+
 const Stack = createNativeStackNavigator();
 
-export default function App() {
+function RootNavigator() {
+  const { currentUser } = useAuth();
+
+  // If you want a loading screen while auth state is resolving, 
+  // you'd check `loading` from useAuth() here.
+
   return (
-    <SafeAreaProvider>
-      <NavigationContainer>
-        <StatusBar style="auto" />
-        <Stack.Navigator
-          initialRouteName="Splash"
-          screenOptions={{
-            headerShown: false,
-            contentStyle: { backgroundColor: '#FFFFFF' }
-          }}
-        >
-          {/* ── Onboarding & Auth ── */}
-          <Stack.Screen name="Splash" component={SplashScreen} />
+    <Stack.Navigator
+      initialRouteName="Splash" // Or conditionally "Main" vs "Welcome"
+      screenOptions={{
+        headerShown: false,
+        contentStyle: { backgroundColor: '#FFFFFF' }
+      }}
+    >
+      {/* ── Always Available / Special ── */}
+      <Stack.Screen name="Splash" component={SplashScreen} />
+
+      {!currentUser ? (
+        /* ── Unauthenticated ── */
+        <>
           <Stack.Screen name="Welcome" component={WelcomeScreen} />
           <Stack.Screen name="Onboarding" component={OnboardingScreen} />
           <Stack.Screen name="LetsYouIn" component={LetsYouInScreen} />
@@ -81,14 +91,17 @@ export default function App() {
           <Stack.Screen name="ForgotPassword" component={ForgotPasswordScreen} />
           <Stack.Screen name="OTPVerification" component={OTPVerificationScreen} />
           <Stack.Screen name="CreateNewPassword" component={CreateNewPasswordScreen} />
-
-          {/* ── Main App ── */}
+        </>
+      ) : (
+        /* ── Authenticated ── */
+        <>
+          {/* Main App */}
           <Stack.Screen name="Main" component={MainTabNavigator} />
           <Stack.Screen name="ProductDetail" component={ProductDetailScreen} />
           <Stack.Screen name="Wishlist" component={WishlistScreen} />
           <Stack.Screen name="Notifications" component={NotificationsScreen} />
 
-          {/* ── Cart & Checkout ── */}
+          {/* Cart & Checkout */}
           <Stack.Screen name="Cart" component={CartScreen} />
           <Stack.Screen name="Checkout" component={CheckoutScreen} />
           <Stack.Screen name="ShippingAddress" component={ShippingAddressScreen} />
@@ -99,7 +112,7 @@ export default function App() {
           <Stack.Screen name="TrackOrder" component={TrackOrderScreen} />
           <Stack.Screen name="LeaveReview" component={LeaveReviewScreen} />
 
-          {/* ── Wallet Flow ── */}
+          {/* Wallet Flow */}
           <Stack.Screen name="EWallet" component={EWalletScreen} />
           <Stack.Screen name="TopUpWallet" component={TopUpWalletScreen} />
           <Stack.Screen name="TopUpMethod" component={TopUpMethodScreen} />
@@ -107,7 +120,7 @@ export default function App() {
           <Stack.Screen name="TransactionHistory" component={TransactionHistoryScreen} />
           <Stack.Screen name="EReceipt" component={EReceiptScreen} />
 
-          {/* ── Profile & Settings ── */}
+          {/* Profile & Settings */}
           <Stack.Screen name="EditProfile" component={EditProfileScreen} />
           <Stack.Screen name="Address" component={AddressScreen} />
           <Stack.Screen name="AddAddress" component={AddAddressScreen} />
@@ -118,8 +131,21 @@ export default function App() {
           <Stack.Screen name="HelpCenter" component={HelpCenterScreen} />
           <Stack.Screen name="CustomerServiceChat" component={CustomerServiceChatScreen} />
           <Stack.Screen name="InviteFriends" component={InviteFriendsScreen} />
-        </Stack.Navigator>
-      </NavigationContainer>
+        </>
+      )}
+    </Stack.Navigator>
+  );
+}
+
+export default function App() {
+  return (
+    <SafeAreaProvider>
+      <AuthProvider>
+        <NavigationContainer>
+          <StatusBar style="auto" />
+          <RootNavigator />
+        </NavigationContainer>
+      </AuthProvider>
     </SafeAreaProvider>
   );
 }

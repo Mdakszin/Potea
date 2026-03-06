@@ -1,5 +1,5 @@
 import React from 'react';
-import { TouchableOpacity, Text, StyleSheet } from 'react-native';
+import { TouchableOpacity, Text, StyleSheet, Platform } from 'react-native';
 import { COLORS, TYPOGRAPHY, SPACING } from '../constants/theme';
 
 const Button = ({
@@ -50,22 +50,24 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         paddingHorizontal: SPACING.lg,
         width: '100%',
-        shadowColor: COLORS.primary,
-        shadowOffset: {
-            width: 0,
-            height: 4,
-        },
-        shadowOpacity: 0.2,
-        shadowRadius: 8,
-        elevation: 5,
+        ...Platform.select({
+            web: {
+                boxShadow: `0px 4px 8px ${COLORS.primary}33`, // 33 is 20% opacity in hex
+            },
+            default: {
+                shadowColor: COLORS.primary,
+                shadowOffset: { width: 0, height: 4 },
+                shadowOpacity: 0.2,
+                shadowRadius: 8,
+                elevation: 5,
+            }
+        }),
     },
     text: {
         ...TYPOGRAPHY.button,
     },
     outlineButton: {
         backgroundColor: COLORS.primaryLight,
-        shadowOpacity: 0,
-        elevation: 0,
     },
     outlineText: {
         ...TYPOGRAPHY.button,
@@ -75,8 +77,6 @@ const styles = StyleSheet.create({
         backgroundColor: COLORS.white,
         borderWidth: 1,
         borderColor: COLORS.border,
-        shadowOpacity: 0,
-        elevation: 0,
     },
     socialText: {
         ...TYPOGRAPHY.button,

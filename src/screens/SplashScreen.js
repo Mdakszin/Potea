@@ -2,14 +2,21 @@ import React, { useEffect } from 'react';
 import { View, StyleSheet, ActivityIndicator } from 'react-native';
 import { COLORS } from '../constants/theme';
 import { Ionicons } from '@expo/vector-icons';
+import { useAuth } from '../contexts/AuthContext';
 
 export default function SplashScreen({ navigation }) {
+    const { currentUser } = useAuth();
+
     useEffect(() => {
         const timer = setTimeout(() => {
-            navigation.replace('Welcome');
+            if (currentUser) {
+                navigation.replace('Main');
+            } else {
+                navigation.replace('Welcome');
+            }
         }, 2000);
         return () => clearTimeout(timer);
-    }, []);
+    }, [currentUser]);
 
     return (
         <View style={styles.container}>

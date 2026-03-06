@@ -1,6 +1,6 @@
 import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { View, StyleSheet } from 'react-native';
+import { View, StyleSheet, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../constants/theme';
 
@@ -58,14 +58,13 @@ const styles = StyleSheet.create({
         borderTopRightRadius: 24,
         borderTopWidth: 0,
         backgroundColor: COLORS.white,
-        elevation: 20,
-        shadowColor: '#000',
-        shadowOpacity: 0.1,
-        shadowRadius: 20,
-        shadowOffset: { width: 0, height: -5 },
         paddingTop: 8,
         paddingBottom: 8,
         position: 'absolute',
+        ...Platform.select({
+            web: { boxShadow: '0px -5px 20px rgba(0,0,0,0.10)' },
+            default: { elevation: 20, shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 20, shadowOffset: { width: 0, height: -5 } }
+        }),
     },
     iconContainer: {
         width: 44,

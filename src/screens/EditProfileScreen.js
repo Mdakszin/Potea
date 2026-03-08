@@ -53,8 +53,7 @@ export default function EditProfileScreen({ navigation }) {
         }
 
         const result = await ImagePicker.launchImageLibraryAsync({
-            // Fix: Use ImagePicker.MediaType.Images instead of MediaTypeOptions (deprecated)
-            mediaTypes: ImagePicker.MediaType.IMAGES,
+            mediaTypes: 'images',
             allowsEditing: true,
             aspect: [1, 1],
             quality: 0.5,

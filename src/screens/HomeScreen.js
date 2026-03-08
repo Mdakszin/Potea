@@ -11,6 +11,8 @@ import Button from '../components/Button';
 import { PLANTS, CATEGORIES } from '../constants/data';
 import LayoutContainer from '../components/LayoutContainer';
 import { useResponsive } from '../utils/responsive';
+import { useAuth } from '../contexts/AuthContext';
+
 
 const BANNERS = [
     {
@@ -30,10 +32,20 @@ const BANNERS = [
 ];
 
 export default function HomeScreen({ navigation }) {
+    const { currentUser, userData } = useAuth();
     const { getColumns, contentMaxWidth, width: screenWidth } = useResponsive();
     const [search, setSearch] = useState('');
     const [activeCategory, setActiveCategory] = useState('all');
     const [activeBanner, setActiveBanner] = useState(0);
+
+    const displayName = userData?.name || currentUser?.displayName || 'User';
+
+    const getGreeting = () => {
+        const hour = new Date().getHours();
+        if (hour < 12) return 'Good morning 👋';
+        if (hour < 18) return 'Good afternoon 👋';
+        return 'Good evening 👋';
+    };
 
     const numColumns = getColumns();
     const bannerWidth = Math.min(screenWidth, contentMaxWidth) - SPACING.lg * 2;
@@ -44,6 +56,7 @@ export default function HomeScreen({ navigation }) {
         return matchCat && matchSearch;
     });
 
+
     return (
         <SafeAreaView style={styles.container}>
             <LayoutContainer>
@@ -52,8 +65,8 @@ export default function HomeScreen({ navigation }) {
                     {/* ── Header ── */}
                     <View style={styles.header}>
                         <View>
-                            <Text style={styles.greeting}>Good morning 👋</Text>
-                            <Text style={styles.username}>Andrew Ainsley</Text>
+                            <Text style={styles.greeting}>{getGreeting()}</Text>
+                            <Text style={styles.username}>{displayName}</Text>
                         </View>
                         <View style={styles.headerRight}>
                             <TouchableOpacity style={styles.iconBtn} onPress={() => navigation.navigate('Notifications')}>
@@ -65,9 +78,9 @@ export default function HomeScreen({ navigation }) {
                             <TouchableOpacity style={styles.iconBtn} onPress={() => navigation.navigate('Cart')}>
                                 <Ionicons name="cart-outline" size={24} color={COLORS.text} />
                             </TouchableOpacity>
-                            <TouchableOpacity style={styles.avatarContainer}>
+                            <TouchableOpacity style={styles.avatarContainer} onPress={() => navigation.navigate('Profile')}>
                                 <Image
-                                    source={{ uri: 'https://images.unsplash.com/photo-1547425260-76bcadfb4f2c?auto=format&fit=crop&w=200&q=80' }}
+                                    source={{ uri: userData?.avatar || currentUser?.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=4CAF50&color=fff&size=100` }}
                                     style={styles.avatar}
                                 />
                             </TouchableOpacity>

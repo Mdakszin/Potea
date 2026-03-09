@@ -92,16 +92,19 @@ export default function HomeScreen({ navigation }) {
                     {/* ── Search Bar ── */}
                     <View style={styles.searchRow}>
                         <View style={[styles.searchBar, { backgroundColor: colors.card, borderColor: colors.border }]}>
-                            <Ionicons name="search-outline" size={20} color={colors.textLight} style={styles.searchIcon} />
+                            <TouchableOpacity onPress={() => search.trim() && navigation.navigate('Explore', { searchQuery: search })}>
+                                <Ionicons name="search-outline" size={20} color={colors.textLight} style={styles.searchIcon} />
+                            </TouchableOpacity>
                             <TextInput
                                 style={[styles.searchInput, { color: colors.text }]}
                                 placeholder="Search plants..."
                                 placeholderTextColor={colors.textLight}
                                 value={search}
                                 onChangeText={setSearch}
+                                onSubmitEditing={() => search.trim() && navigation.navigate('Explore', { searchQuery: search })}
                             />
                         </View>
-                        <TouchableOpacity style={styles.filterBtn}>
+                        <TouchableOpacity style={styles.filterBtn} onPress={() => navigation.navigate('Explore', { openFilter: true })}>
                             <Ionicons name="options-outline" size={22} color={COLORS.white} />
                         </TouchableOpacity>
                     </View>

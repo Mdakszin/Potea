@@ -9,7 +9,7 @@ import {
     GoogleAuthProvider,
     signInWithPopup
 } from 'firebase/auth';
-import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, setDoc, getDoc, serverTimestamp, onSnapshot } from 'firebase/firestore';
 
 const AuthContext = createContext();
 
@@ -86,21 +86,27 @@ export function AuthProvider({ children }) {
     }
 
     useEffect(() => {
+        let userUnsubscribe = null;
+
         const unsubscribe = onAuthStateChanged(auth, async (user) => {
             setCurrentUser(user);
 
-            if (user) {
-                // Fetch additional user data from Firestore
-                try {
-                    const docRef = doc(db, 'users', user.uid);
-                    const docSnap = await getDoc(docRef);
+            // Clean up old listener
+            if (userUnsubscribe) {
+                userUnsubscribe();
+                userUnsubscribe = null;
+            }
 
+            if (user) {
+                const docRef = doc(db, 'users', user.uid);
+                // Real-time listener for user details & favorites
+                userUnsubscribe = onSnapshot(docRef, (docSnap) => {
                     if (docSnap.exists()) {
                         setUserData(docSnap.data());
                     }
-                } catch (error) {
-                    console.error("Error fetching user data:", error);
-                }
+                }, (error) => {
+                    console.error("Error listening to user data:", error);
+                });
             } else {
                 setUserData(null);
             }
@@ -108,7 +114,10 @@ export function AuthProvider({ children }) {
             setLoading(false);
         });
 
-        return unsubscribe;
+        return () => {
+            unsubscribe();
+            if (userUnsubscribe) userUnsubscribe();
+        };
     }, []);
 
     const value = {

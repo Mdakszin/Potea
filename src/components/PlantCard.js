@@ -1,16 +1,43 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, Image, TouchableOpacity, Dimensions, Platform } from 'react-native';
 import { COLORS, TYPOGRAPHY, SPACING, SHADOWS } from '../constants/theme';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../contexts/ThemeContext';
+import { useAuth } from '../contexts/AuthContext';
+import { doc, updateDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
+import { db } from '../config/firebase';
 
 export default function PlantCard({ item, onPress, onToggleFavorite, style }) {
     const { colors } = useTheme();
-    const [isFav, setIsFav] = useState(item.isFavorite);
+    const { currentUser, userData } = useAuth();
 
-    const handleFav = () => {
-        setIsFav(!isFav);
-        onToggleFavorite && onToggleFavorite(item.id, !isFav);
+    // Determine early if this is favored (fallback to item prop if auth isn't loaded)
+    const isInitiallyFav = userData?.favorites ? userData.favorites.includes(item.id) : item.isFavorite || false;
+    const [isFav, setIsFav] = useState(isInitiallyFav);
+
+    // Sync state if userData changes remotely
+    useEffect(() => {
+        if (userData?.favorites) {
+            setIsFav(userData.favorites.includes(item.id));
+        }
+    }, [userData?.favorites, item.id]);
+
+    const handleFav = async () => {
+        const newFavState = !isFav;
+        setIsFav(newFavState);
+        onToggleFavorite && onToggleFavorite(item.id, newFavState);
+
+        if (currentUser) {
+            try {
+                const userRef = doc(db, 'users', currentUser.uid);
+                await updateDoc(userRef, {
+                    favorites: newFavState ? arrayUnion(item.id) : arrayRemove(item.id)
+                });
+            } catch (error) {
+                console.error('Error updating favorites:', error);
+                setIsFav(!newFavState); // Revert on failure
+            }
+        }
     };
 
     return (

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     View, Text, StyleSheet, FlatList, TextInput,
     TouchableOpacity, Modal, ScrollView
@@ -14,7 +14,7 @@ import LayoutContainer from '../components/LayoutContainer';
 import { useResponsive } from '../utils/responsive';
 import { useTheme } from '../contexts/ThemeContext';
 
-export default function ExploreScreen({ navigation }) {
+export default function ExploreScreen({ navigation, route }) {
     const { getColumns } = useResponsive();
     const { isDark, colors } = useTheme();
     const [search, setSearch] = useState('');
@@ -23,13 +23,33 @@ export default function ExploreScreen({ navigation }) {
     const [history, setHistory] = useState(['Monstera', 'Indoor Plants', 'Snake Plant']);
     const [isFocused, setIsFocused] = useState(false);
 
+    const [activeSort, setActiveSort] = useState('Popular');
+    const [activeRating, setActiveRating] = useState(null);
+
     const numColumns = getColumns();
 
-    const filtered = PLANTS.filter(p => {
-        const matchCat = activeCategory === 'all' || p.category.toLowerCase() === activeCategory;
+    useEffect(() => {
+        if (route.params?.searchQuery) {
+            setSearch(route.params.searchQuery);
+            setIsFocused(false);
+        }
+        if (route.params?.openFilter) {
+            setShowFilter(true);
+        }
+    }, [route.params]);
+
+    let filtered = PLANTS.filter(p => {
+        const matchCat = activeCategory === 'all' || p.category.toLowerCase() === activeCategory.toLowerCase();
         const matchSearch = p.name.toLowerCase().includes(search.toLowerCase());
-        return matchCat && matchSearch;
+        const matchRating = activeRating ? p.rating >= activeRating : true;
+        return matchCat && matchSearch && matchRating;
     });
+
+    if (activeSort === 'Price High') {
+        filtered.sort((a, b) => b.price - a.price);
+    } else if (activeSort === 'Price Low') {
+        filtered.sort((a, b) => a.price - b.price);
+    }
 
     const handleSearch = (text) => {
         setSearch(text);
@@ -153,7 +173,9 @@ export default function ExploreScreen({ navigation }) {
                     visible={showFilter}
                     onClose={() => setShowFilter(false)}
                     onApply={(filters) => {
-                        console.log('Applied filters:', filters);
+                        setActiveCategory(filters.activeCategory === 'All' ? 'all' : filters.activeCategory.toLowerCase());
+                        setActiveSort(filters.activeSort);
+                        setActiveRating(filters.activeRating);
                         setShowFilter(false);
                     }}
                 />

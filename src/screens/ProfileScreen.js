@@ -11,6 +11,7 @@ const MENU_ITEMS = [
     { id: '0', icon: 'document-text-outline', label: 'My Orders', target: 'Orders' },
     { id: '1', icon: 'person-outline', label: 'Edit Profile', target: 'EditProfile' },
     { id: '2', icon: 'wallet-outline', label: 'My E-Wallet', target: 'Wallet' },
+    { id: '11', icon: 'heart-outline', label: 'Wishlist', target: 'Wishlist' },
     { id: '3', icon: 'notifications-outline', label: 'Notifications', target: 'NotificationSettings' },
     { id: '4', icon: 'location-outline', label: 'Address', target: 'Address' },
     { id: '5', icon: 'lock-closed-outline', label: 'Security', target: 'Security' },

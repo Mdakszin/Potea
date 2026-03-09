@@ -10,18 +10,47 @@ import Button from '../components/Button';
 import LayoutContainer from '../components/LayoutContainer';
 import { useResponsive } from '../utils/responsive';
 import { useTheme } from '../contexts/ThemeContext';
-import { collection, query, where, onSnapshot } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, doc, updateDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import ReviewCard from '../components/ReviewCard';
 import WriteReviewModal from '../components/WriteReviewModal';
+import { useAuth } from '../contexts/AuthContext';
 
 export default function ProductDetailScreen({ route, navigation }) {
     const { isMobile } = useResponsive();
-    const { colors, isDark } = useTheme();
+    const { isDark, colors } = useTheme();
+    const { currentUser, userData } = useAuth();
     const { plant } = route.params;
     const [selectedSize, setSelectedSize] = useState(plant.sizes[0]);
     const [quantity, setQuantity] = useState(1);
-    const [isFav, setIsFav] = useState(plant.isFavorite);
+
+    // Initial favorite state from userData if available
+    const isInitiallyFav = userData?.favorites ? userData.favorites.includes(plant.id) : plant.isFavorite || false;
+    const [isFav, setIsFav] = useState(isInitiallyFav);
+
+    // Sync isFav when userData.favorites updates
+    useEffect(() => {
+        if (userData?.favorites) {
+            setIsFav(userData.favorites.includes(plant.id));
+        }
+    }, [userData?.favorites, plant.id]);
+
+    const toggleFavorite = async () => {
+        const newFavState = !isFav;
+        setIsFav(newFavState);
+
+        if (currentUser) {
+            try {
+                const userRef = doc(db, 'users', currentUser.uid);
+                await updateDoc(userRef, {
+                    favorites: newFavState ? arrayUnion(plant.id) : arrayRemove(plant.id)
+                });
+            } catch (error) {
+                console.error('Error updating favorites:', error);
+                setIsFav(!newFavState); // Revert on error
+            }
+        }
+    };
 
     // Reviews state
     const [reviews, setReviews] = useState([]);
@@ -65,7 +94,7 @@ export default function ProductDetailScreen({ route, navigation }) {
                         <Ionicons name="arrow-back" size={22} color={colors.text} />
                     </TouchableOpacity>
                     <Text style={[styles.headerTitle, { color: colors.text }]}>Detail Plant</Text>
-                    <TouchableOpacity style={[styles.headerBtn, { borderColor: colors.border }]} onPress={() => setIsFav(!isFav)}>
+                    <TouchableOpacity style={[styles.headerBtn, { borderColor: colors.border }]} onPress={toggleFavorite}>
                         <Ionicons name={isFav ? 'heart' : 'heart-outline'} size={22} color={isFav ? '#FF4C4C' : colors.text} />
                     </TouchableOpacity>
                 </View>

@@ -2,8 +2,10 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, Image, TouchableOpacity, Dimensions, Platform } from 'react-native';
 import { COLORS, TYPOGRAPHY, SPACING, SHADOWS } from '../constants/theme';
 import { Ionicons } from '@expo/vector-icons';
+import { useTheme } from '../contexts/ThemeContext';
 
 export default function PlantCard({ item, onPress, onToggleFavorite, style }) {
+    const { colors } = useTheme();
     const [isFav, setIsFav] = useState(item.isFavorite);
 
     const handleFav = () => {
@@ -12,22 +14,22 @@ export default function PlantCard({ item, onPress, onToggleFavorite, style }) {
     };
 
     return (
-        <TouchableOpacity style={[styles.card, style]} onPress={() => onPress && onPress(item)} activeOpacity={0.9}>
+        <TouchableOpacity style={[styles.card, { backgroundColor: colors.card, borderColor: colors.border }, style]} onPress={() => onPress && onPress(item)} activeOpacity={0.9}>
             {/* Image */}
-            <View style={styles.imageContainer}>
+            <View style={[styles.imageContainer, { backgroundColor: colors.surface }]}>
                 <Image source={{ uri: item.image }} style={styles.image} resizeMode="cover" />
-                <TouchableOpacity style={styles.favButton} onPress={handleFav}>
+                <TouchableOpacity style={[styles.favButton, { backgroundColor: colors.card }]} onPress={handleFav}>
                     <Ionicons
                         name={isFav ? 'heart' : 'heart-outline'}
                         size={18}
-                        color={isFav ? '#FF4C4C' : COLORS.textLight}
+                        color={isFav ? '#FF4C4C' : colors.textLight}
                     />
                 </TouchableOpacity>
             </View>
 
             {/* Info */}
             <View style={styles.info}>
-                <Text style={styles.name} numberOfLines={1}>{item.name}</Text>
+                <Text style={[styles.name, { color: colors.text }]} numberOfLines={1}>{item.name}</Text>
 
                 {/* Price Row */}
                 <View style={styles.priceRow}>
@@ -54,17 +56,14 @@ export default function PlantCard({ item, onPress, onToggleFavorite, style }) {
 const styles = StyleSheet.create({
     card: {
         flex: 1,
-        backgroundColor: COLORS.white,
         borderRadius: 16,
         overflow: 'hidden',
         borderWidth: 1,
-        borderColor: COLORS.border,
         ...SHADOWS.small,
     },
     imageContainer: {
         width: '100%',
         aspectRatio: 1,
-        backgroundColor: COLORS.primaryLight,
         position: 'relative',
     },
     image: {
@@ -75,7 +74,6 @@ const styles = StyleSheet.create({
         position: 'absolute',
         top: 8,
         right: 8,
-        backgroundColor: COLORS.white,
         borderRadius: 20,
         width: 30,
         height: 30,
@@ -88,7 +86,6 @@ const styles = StyleSheet.create({
     },
     name: {
         ...TYPOGRAPHY.bodySmall,
-        color: COLORS.text,
         fontWeight: '600',
         marginBottom: 4,
     },

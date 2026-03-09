@@ -7,8 +7,10 @@ import { COLORS, TYPOGRAPHY, SPACING, SHADOWS } from '../constants/theme';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { TRANSACTIONS } from '../constants/data';
+import { useTheme } from '../contexts/ThemeContext';
 
 export default function EWalletScreen({ navigation }) {
+    const { isDark, colors } = useTheme();
     const renderTransaction = ({ item }) => (
         <TouchableOpacity
             style={styles.transactionItem}
@@ -24,13 +26,13 @@ export default function EWalletScreen({ navigation }) {
                 )}
             </View>
             <View style={styles.itemInfo}>
-                <Text style={styles.itemName}>{item.name}</Text>
-                <Text style={styles.itemDate}>{item.date}</Text>
+                <Text style={[styles.itemName, { color: colors.text }]}>{item.name}</Text>
+                <Text style={[styles.itemDate, { color: colors.textLight }]}>{item.date}</Text>
             </View>
             <View style={styles.amountInfo}>
-                <Text style={styles.amount}>${item.amount.toFixed(2)}</Text>
+                <Text style={[styles.amount, { color: colors.text }]}>${item.amount.toFixed(2)}</Text>
                 <View style={styles.typeTag}>
-                    <Text style={styles.typeText}>{item.type}</Text>
+                    <Text style={[styles.typeText, { color: colors.textLight }]}>{item.type}</Text>
                     <Ionicons
                         name={item.isTopUp ? "arrow-up-circle" : "arrow-down-circle"}
                         size={14}
@@ -42,18 +44,18 @@ export default function EWalletScreen({ navigation }) {
     );
 
     return (
-        <SafeAreaView style={styles.container}>
+        <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
             <View style={styles.header}>
                 <View style={styles.headerLeft}>
                     <Ionicons name="leaf" size={28} color={COLORS.primary} />
-                    <Text style={styles.headerTitle}>My E-Wallet</Text>
+                    <Text style={[styles.headerTitle, { color: colors.text }]}>My E-Wallet</Text>
                 </View>
                 <View style={styles.headerRight}>
                     <TouchableOpacity style={styles.headerBtn}>
-                        <Ionicons name="search-outline" size={24} color={COLORS.text} />
+                        <Ionicons name="search-outline" size={24} color={colors.text} />
                     </TouchableOpacity>
                     <TouchableOpacity style={styles.headerBtn}>
-                        <Ionicons name="ellipsis-horizontal-circle" size={24} color={COLORS.text} />
+                        <Ionicons name="ellipsis-horizontal-circle" size={24} color={colors.text} />
                     </TouchableOpacity>
                 </View>
             </View>
@@ -159,7 +161,6 @@ const styles = StyleSheet.create({
     },
     iconContainer: {
         width: 54, height: 54, borderRadius: 27,
-        backgroundColor: COLORS.card,
         alignItems: 'center', justifyContent: 'center',
         marginRight: SPACING.md,
     },
@@ -167,9 +168,9 @@ const styles = StyleSheet.create({
     itemImage: { width: 54, height: 54, borderRadius: 27 },
     itemInfo: { flex: 1 },
     itemName: { ...TYPOGRAPHY.body, fontWeight: '700' },
-    itemDate: { ...TYPOGRAPHY.bodySmall, color: COLORS.textLight, marginTop: 4 },
+    itemDate: { ...TYPOGRAPHY.bodySmall, marginTop: 4 },
     amountInfo: { alignItems: 'flex-end' },
     amount: { ...TYPOGRAPHY.body, fontWeight: '700' },
     typeTag: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 4 },
-    typeText: { ...TYPOGRAPHY.bodySmall, fontSize: 10, color: COLORS.textLight },
+    typeText: { ...TYPOGRAPHY.bodySmall, fontSize: 10 },
 });

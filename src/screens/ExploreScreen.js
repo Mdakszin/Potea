@@ -12,9 +12,11 @@ import FilterModal from '../components/FilterModal';
 import { PLANTS, CATEGORIES } from '../constants/data';
 import LayoutContainer from '../components/LayoutContainer';
 import { useResponsive } from '../utils/responsive';
+import { useTheme } from '../contexts/ThemeContext';
 
 export default function ExploreScreen({ navigation }) {
     const { getColumns } = useResponsive();
+    const { isDark, colors } = useTheme();
     const [search, setSearch] = useState('');
     const [activeCategory, setActiveCategory] = useState('all');
     const [showFilter, setShowFilter] = useState(false);
@@ -37,21 +39,21 @@ export default function ExploreScreen({ navigation }) {
     };
 
     return (
-        <SafeAreaView style={styles.container}>
+        <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
             <LayoutContainer>
                 <View style={styles.header}>
-                    <Text style={styles.title}>Explore</Text>
+                    <Text style={[styles.title, { color: colors.text }]}>Explore</Text>
                     <TouchableOpacity style={styles.filterBtn} onPress={() => setShowFilter(true)}>
                         <Ionicons name="options-outline" size={22} color={COLORS.primary} />
                     </TouchableOpacity>
                 </View>
 
                 <View style={styles.searchBar}>
-                    <Ionicons name="search-outline" size={20} color={COLORS.textLight} style={styles.searchIcon} />
+                    <Ionicons name="search-outline" size={20} color={colors.textLight} style={styles.searchIcon} />
                     <TextInput
-                        style={styles.searchInput}
+                        style={[styles.searchInput, { color: colors.text }]}
                         placeholder="Find your favorite plants..."
-                        placeholderTextColor={COLORS.textLight}
+                        placeholderTextColor={colors.textLight}
                         value={search}
                         onChangeText={handleSearch}
                         onFocus={() => setIsFocused(true)}
@@ -115,6 +117,9 @@ export default function ExploreScreen({ navigation }) {
                         )}
 
                         {/* Grid */}
+                        <View style={[styles.sectionHeader, { paddingHorizontal: SPACING.lg, marginTop: SPACING.md, marginBottom: SPACING.md }]}>
+                            <Text style={[styles.sectionTitle, { color: colors.text }]}>All Plants</Text>
+                        </View>
                         <FlatList
                             key={`grid-${numColumns}`}
                             data={filtered}
@@ -191,20 +196,20 @@ const styles = StyleSheet.create({
     historyContainer: { paddingHorizontal: SPACING.lg, flex: 1 },
     historyHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: SPACING.lg },
     historyTitle: { ...TYPOGRAPHY.h3 },
-    clearAll: { ...TYPOGRAPHY.bodySmall, color: COLORS.primary, fontWeight: '600' },
+    clearAll: { ...TYPOGRAPHY.bodySmall, fontWeight: '600' },
     historyList: { gap: SPACING.md },
-    historyItem: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', borderBottomWidth: 1, borderBottomColor: COLORS.border, paddingBottom: SPACING.sm },
-    historyText: { ...TYPOGRAPHY.body, color: COLORS.textLight },
+    historyItem: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', borderBottomWidth: 1, paddingBottom: SPACING.sm },
+    historyText: { ...TYPOGRAPHY.body },
 
     resultsHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: SPACING.lg, marginBottom: SPACING.md },
     resultsTitle: { ...TYPOGRAPHY.h3 },
-    resultsCount: { ...TYPOGRAPHY.bodySmall, color: COLORS.primary, fontWeight: '600' },
+    resultsCount: { ...TYPOGRAPHY.bodySmall, fontWeight: '600' },
 
     gridContainer: { paddingHorizontal: SPACING.lg, paddingBottom: SPACING.xxl },
     columnWrapper: { gap: SPACING.md, marginBottom: SPACING.md },
 
     emptyContainer: { alignItems: 'center', paddingVertical: SPACING.xxl, paddingHorizontal: SPACING.xl },
-    emptyIconCircle: { width: 120, height: 120, borderRadius: 60, backgroundColor: COLORS.primaryLight, alignItems: 'center', justifyContent: 'center', marginBottom: SPACING.xl },
+    emptyIconCircle: { width: 120, height: 120, borderRadius: 60, alignItems: 'center', justifyContent: 'center', marginBottom: SPACING.xl },
     emptyTitle: { ...TYPOGRAPHY.h3, marginBottom: SPACING.md },
-    emptyText: { ...TYPOGRAPHY.bodySmall, color: COLORS.textLight, textAlign: 'center', lineHeight: 20 },
+    emptyText: { ...TYPOGRAPHY.bodySmall, textAlign: 'center', lineHeight: 20 },
 });

@@ -9,14 +9,15 @@ import { Ionicons } from '@expo/vector-icons';
 import { db } from '../config/firebase';
 import { collection, query, where, orderBy, onSnapshot } from 'firebase/firestore';
 import { useAuth } from '../contexts/AuthContext';
+import { useTheme } from '../contexts/ThemeContext';
 
-const EmptyOrders = ({ activeTab }) => (
+const EmptyOrders = ({ activeTab, colors }) => (
     <View style={emptyStyles.container}>
         <View style={emptyStyles.iconContainer}>
-            <Ionicons name="document-text-outline" size={80} color={COLORS.primary} />
+            <Ionicons name="document-text-outline" size={80} color={colors.primary} />
         </View>
-        <Text style={emptyStyles.title}>No {activeTab} orders yet</Text>
-        <Text style={emptyStyles.subtitle}>
+        <Text style={[emptyStyles.title, { color: colors.text }]}>No {activeTab} orders yet</Text>
+        <Text style={[emptyStyles.subtitle, { color: colors.textLight }]}>
             You don't have any {activeTab} orders at this time. Start shopping to see them here!
         </Text>
     </View>
@@ -53,6 +54,7 @@ const emptyStyles = StyleSheet.create({
 
 export default function MyOrdersScreen({ navigation }) {
     const { currentUser } = useAuth();
+    const { isDark, colors } = useTheme();
     const [activeTab, setActiveTab] = useState('active');
     const [orders, setOrders] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -97,14 +99,14 @@ export default function MyOrdersScreen({ navigation }) {
         const totalItems = item.items.reduce((sum, i) => sum + i.qty, 0);
 
         return (
-            <View style={styles.orderCard}>
-                <Image source={{ uri: firstItem.image }} style={styles.orderImage} />
+            <View style={[styles.orderCard, { backgroundColor: colors.card, borderColor: colors.border, borderWidth: 1 }]}>
+                <Image source={{ uri: firstItem.image }} style={[styles.orderImage, { backgroundColor: colors.surface }]} />
                 <View style={styles.orderInfo}>
-                    <Text style={styles.plantName} numberOfLines={1}>
+                    <Text style={[styles.plantName, { color: colors.text }]} numberOfLines={1}>
                         {firstItem.name} {item.items.length > 1 ? `+ ${item.items.length - 1} more` : ''}
                     </Text>
-                    <Text style={styles.orderQty}>Total Items: {totalItems}</Text>
-                    <View style={styles.statusBadge}>
+                    <Text style={[styles.orderQty, { color: colors.textLight }]}>Total Items: {totalItems}</Text>
+                    <View style={[styles.statusBadge, { backgroundColor: colors.surface }]}>
                         <Text style={[styles.statusText, item.status === 'Completed' ? styles.statusCompleted : styles.statusActive]}>
                             {item.status}
                         </Text>
@@ -133,34 +135,34 @@ export default function MyOrdersScreen({ navigation }) {
     };
 
     return (
-        <SafeAreaView style={styles.container}>
+        <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
             <View style={styles.header}>
                 <View style={styles.headerLeft}>
                     <Ionicons name="leaf" size={24} color={COLORS.primary} style={styles.logo} />
-                    <Text style={styles.headerTitle}>My Orders</Text>
+                    <Text style={[styles.headerTitle, { color: colors.text }]}>My Orders</Text>
                 </View>
                 <View style={styles.headerRight}>
                     <TouchableOpacity style={styles.headerIcon}>
-                        <Ionicons name="search" size={24} color={COLORS.text} />
+                        <Ionicons name="search" size={24} color={colors.text} />
                     </TouchableOpacity>
                     <TouchableOpacity style={styles.headerIcon}>
-                        <Ionicons name="ellipsis-horizontal-circle" size={24} color={COLORS.text} />
+                        <Ionicons name="ellipsis-horizontal-circle" size={24} color={colors.text} />
                     </TouchableOpacity>
                 </View>
             </View>
 
-            <View style={styles.tabContainer}>
+            <View style={[styles.tabContainer, { borderBottomColor: colors.border }]}>
                 <TouchableOpacity
-                    style={[styles.tab, activeTab === 'active' && styles.activeTab]}
+                    style={[styles.tab, activeTab === 'active' && [styles.activeTab, { borderBottomColor: COLORS.primary }]]}
                     onPress={() => setActiveTab('active')}
                 >
-                    <Text style={[styles.tabText, activeTab === 'active' && styles.activeTabText]}>Active</Text>
+                    <Text style={[styles.tabText, { color: colors.textLight }, activeTab === 'active' && styles.activeTabText]}>Active</Text>
                 </TouchableOpacity>
                 <TouchableOpacity
-                    style={[styles.tab, activeTab === 'completed' && styles.activeTab]}
+                    style={[styles.tab, activeTab === 'completed' && [styles.activeTab, { borderBottomColor: COLORS.primary }]]}
                     onPress={() => setActiveTab('completed')}
                 >
-                    <Text style={[styles.tabText, activeTab === 'completed' && styles.activeTabText]}>Completed</Text>
+                    <Text style={[styles.tabText, { color: colors.textLight }, activeTab === 'completed' && styles.activeTabText]}>Completed</Text>
                 </TouchableOpacity>
             </View>
 
@@ -169,7 +171,7 @@ export default function MyOrdersScreen({ navigation }) {
                     <ActivityIndicator size="large" color={COLORS.primary} />
                 </View>
             ) : orders.length === 0 ? (
-                <EmptyOrders activeTab={activeTab} />
+                <EmptyOrders activeTab={activeTab} colors={colors} />
             ) : (
                 <FlatList
                     data={orders}

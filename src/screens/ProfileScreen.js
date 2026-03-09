@@ -5,6 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import LayoutContainer from '../components/LayoutContainer';
 import { useAuth } from '../contexts/AuthContext';
+import { useTheme } from '../contexts/ThemeContext';
 
 const MENU_ITEMS = [
     { id: '0', icon: 'document-text-outline', label: 'My Orders', target: 'Orders' },
@@ -22,8 +23,9 @@ const MENU_ITEMS = [
 
 export default function ProfileScreen({ navigation }) {
     const { currentUser, userData, logout } = useAuth();
+    const { isDark, colors, toggleTheme } = useTheme();
 
-    // Resolve display values — Firestore userData takes priority, fallback to Firebase Auth fields
+    // Resolve display values
     const displayName = userData?.name || currentUser?.displayName || 'User';
     const displayEmail = userData?.email || currentUser?.email || '';
     const avatarUri = userData?.avatar
@@ -33,18 +35,17 @@ export default function ProfileScreen({ navigation }) {
     const handleLogout = async () => {
         try {
             await logout();
-            // AuthContext listener will clear currentUser → App.js routes to auth screens
         } catch (error) {
             console.error('Logout failed:', error);
         }
     };
 
     return (
-        <SafeAreaView style={styles.container}>
+        <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
             <LayoutContainer>
                 <ScrollView contentContainerStyle={{ paddingBottom: 100 }}>
                     <View style={styles.header}>
-                        <Text style={styles.title}>My Profile</Text>
+                        <Text style={[styles.title, { color: colors.text }]}>My Profile</Text>
                     </View>
 
                     {/* Avatar & Info */}
@@ -61,8 +62,8 @@ export default function ProfileScreen({ navigation }) {
                                 <Ionicons name="pencil" size={14} color={COLORS.white} />
                             </TouchableOpacity>
                         </View>
-                        <Text style={styles.name}>{displayName}</Text>
-                        <Text style={styles.email}>{displayEmail}</Text>
+                        <Text style={[styles.name, { color: colors.text }]}>{displayName}</Text>
+                        <Text style={[styles.email, { color: colors.textLight }]}>{displayEmail}</Text>
                     </View>
 
                     {/* Menu items */}
@@ -71,20 +72,26 @@ export default function ProfileScreen({ navigation }) {
                             <TouchableOpacity
                                 key={item.id}
                                 style={styles.menuItem}
-                                onPress={() => item.target && navigation.navigate(item.target)}
+                                onPress={() => {
+                                    if (item.isToggle) {
+                                        toggleTheme();
+                                    } else if (item.target) {
+                                        navigation.navigate(item.target);
+                                    }
+                                }}
                             >
                                 <View style={styles.menuLeft}>
-                                    <Ionicons name={item.icon} size={24} color={COLORS.text} />
-                                    <Text style={styles.menuLabel}>{item.label}</Text>
+                                    <Ionicons name={item.icon} size={24} color={colors.text} />
+                                    <Text style={[styles.menuLabel, { color: colors.text }]}>{item.label}</Text>
                                 </View>
                                 <View style={styles.menuRight}>
-                                    {item.label === 'Language' && <Text style={styles.menuValue}>English (US)</Text>}
+                                    {item.label === 'Language' && <Text style={[styles.menuValue, { color: colors.text }]}>English (US)</Text>}
                                     {item.isToggle ? (
-                                        <View style={[styles.toggle, { backgroundColor: COLORS.primary }]}>
-                                            <View style={styles.toggleCircle} />
+                                        <View style={[styles.toggle, { backgroundColor: isDark ? COLORS.primary : COLORS.border }]}>
+                                            <View style={[styles.toggleCircle, { alignSelf: isDark ? 'flex-end' : 'flex-start' }]} />
                                         </View>
                                     ) : (
-                                        <Ionicons name="chevron-forward" size={20} color={COLORS.text} />
+                                        <Ionicons name="chevron-forward" size={20} color={colors.textLight} />
                                     )}
                                 </View>
                             </TouchableOpacity>
@@ -141,7 +148,7 @@ const styles = StyleSheet.create({
     menuValue: { ...TYPOGRAPHY.body, fontWeight: '600', color: COLORS.text, marginRight: 8 },
     toggle: {
         width: 44, height: 24, borderRadius: 12, padding: 2,
-        justifyContent: 'center', alignItems: 'flex-end',
+        justifyContent: 'center',
     },
     toggleCircle: {
         width: 20, height: 20, borderRadius: 10, backgroundColor: COLORS.white,

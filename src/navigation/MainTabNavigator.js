@@ -3,6 +3,7 @@ import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { View, StyleSheet, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { COLORS } from '../constants/theme';
+import { useTheme } from '../contexts/ThemeContext';
 
 import HomeScreen from '../screens/HomeScreen';
 import ExploreScreen from '../screens/ExploreScreen';
@@ -21,21 +22,30 @@ const TAB_ICONS = {
 };
 
 export default function MainTabNavigator() {
+    const { isDark, colors } = useTheme();
+
     return (
         <Tab.Navigator
             screenOptions={({ route }) => ({
                 headerShown: false,
                 tabBarShowLabel: false,
-                tabBarStyle: styles.tabBar,
+                tabBarStyle: {
+                    ...styles.tabBar,
+                    backgroundColor: colors.tabBar,
+                    ...Platform.select({
+                        web: { boxShadow: isDark ? '0px -5px 20px rgba(0,0,0,0.40)' : '0px -5px 20px rgba(0,0,0,0.10)' },
+                        default: { elevation: 20, shadowColor: '#000', shadowOpacity: isDark ? 0.3 : 0.1, shadowRadius: 20, shadowOffset: { width: 0, height: -5 } }
+                    }),
+                },
                 tabBarIcon: ({ focused, size }) => {
                     const icons = TAB_ICONS[route.name];
                     const iconName = focused ? icons.active : icons.inactive;
                     return (
-                        <View style={[styles.iconContainer, focused && styles.iconContainerActive]}>
+                        <View style={[styles.iconContainer, focused && { backgroundColor: colors.primaryLight }]}>
                             <Ionicons
                                 name={iconName}
                                 size={22}
-                                color={focused ? COLORS.primary : COLORS.textLight}
+                                color={focused ? COLORS.primary : colors.textLight}
                             />
                         </View>
                     );
@@ -57,14 +67,9 @@ const styles = StyleSheet.create({
         borderTopLeftRadius: 24,
         borderTopRightRadius: 24,
         borderTopWidth: 0,
-        backgroundColor: COLORS.white,
         paddingTop: 8,
         paddingBottom: 8,
         position: 'absolute',
-        ...Platform.select({
-            web: { boxShadow: '0px -5px 20px rgba(0,0,0,0.10)' },
-            default: { elevation: 20, shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 20, shadowOffset: { width: 0, height: -5 } }
-        }),
     },
     iconContainer: {
         width: 44,
@@ -72,8 +77,5 @@ const styles = StyleSheet.create({
         borderRadius: 22,
         alignItems: 'center',
         justifyContent: 'center',
-    },
-    iconContainerActive: {
-        backgroundColor: COLORS.primaryLight,
     },
 });

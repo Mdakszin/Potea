@@ -12,6 +12,7 @@ import { PLANTS, CATEGORIES } from '../constants/data';
 import LayoutContainer from '../components/LayoutContainer';
 import { useResponsive } from '../utils/responsive';
 import { useAuth } from '../contexts/AuthContext';
+import { useTheme } from '../contexts/ThemeContext';
 
 
 const BANNERS = [
@@ -33,6 +34,7 @@ const BANNERS = [
 
 export default function HomeScreen({ navigation }) {
     const { currentUser, userData } = useAuth();
+    const { isDark, colors } = useTheme();
     const { getColumns, contentMaxWidth, width: screenWidth } = useResponsive();
     const [search, setSearch] = useState('');
     const [activeCategory, setActiveCategory] = useState('all');
@@ -58,22 +60,22 @@ export default function HomeScreen({ navigation }) {
 
 
     return (
-        <SafeAreaView style={styles.container}>
+        <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
             <LayoutContainer>
                 <ScrollView showsVerticalScrollIndicator={false}>
 
                     {/* ── Header ── */}
                     <View style={styles.header}>
                         <View>
-                            <Text style={styles.greeting}>{getGreeting()}</Text>
-                            <Text style={styles.username}>{displayName}</Text>
+                            <Text style={[styles.greeting, { color: colors.textLight }]}>{getGreeting()}</Text>
+                            <Text style={[styles.username, { color: colors.text }]}>{displayName}</Text>
                         </View>
                         <View style={styles.headerRight}>
-                            <TouchableOpacity style={styles.iconBtn} onPress={() => navigation.navigate('Notifications')}>
-                                <Ionicons name="notifications-outline" size={24} color={COLORS.text} />
+                            <TouchableOpacity style={[styles.iconBtn, { borderColor: colors.border }]} onPress={() => navigation.navigate('Notifications')}>
+                                <Ionicons name="notifications-outline" size={24} color={colors.text} />
                             </TouchableOpacity>
-                            <TouchableOpacity style={styles.iconBtn} onPress={() => navigation.navigate('Wishlist')}>
-                                <Ionicons name="heart-outline" size={24} color={COLORS.text} />
+                            <TouchableOpacity style={[styles.iconBtn, { borderColor: colors.border }]} onPress={() => navigation.navigate('Wishlist')}>
+                                <Ionicons name="heart-outline" size={24} color={colors.text} />
                             </TouchableOpacity>
                             <TouchableOpacity style={styles.iconBtn} onPress={() => navigation.navigate('Cart')}>
                                 <Ionicons name="cart-outline" size={24} color={COLORS.text} />
@@ -89,12 +91,12 @@ export default function HomeScreen({ navigation }) {
 
                     {/* ── Search Bar ── */}
                     <View style={styles.searchRow}>
-                        <View style={styles.searchBar}>
-                            <Ionicons name="search-outline" size={20} color={COLORS.textLight} style={styles.searchIcon} />
+                        <View style={[styles.searchBar, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                            <Ionicons name="search-outline" size={20} color={colors.textLight} style={styles.searchIcon} />
                             <TextInput
-                                style={styles.searchInput}
+                                style={[styles.searchInput, { color: colors.text }]}
                                 placeholder="Search plants..."
-                                placeholderTextColor={COLORS.textLight}
+                                placeholderTextColor={colors.textLight}
                                 value={search}
                                 onChangeText={setSearch}
                             />
@@ -118,8 +120,8 @@ export default function HomeScreen({ navigation }) {
                         {BANNERS.map((b) => (
                             <View key={b.id} style={[styles.banner, { backgroundColor: b.bg, width: bannerWidth }]}>
                                 <View style={styles.bannerText}>
-                                    <Text style={styles.bannerTitle}>{b.title}</Text>
-                                    <Text style={styles.bannerSubtitle}>{b.subtitle}</Text>
+                                    <Text style={[styles.bannerTitle, { color: COLORS.black }]}>{b.title}</Text>
+                                    <Text style={[styles.bannerSubtitle, { color: COLORS.text }]}>{b.subtitle}</Text>
                                     <TouchableOpacity style={styles.shopNowBtn}>
                                         <Text style={styles.shopNowText}>Shop Now</Text>
                                     </TouchableOpacity>
@@ -138,17 +140,17 @@ export default function HomeScreen({ navigation }) {
 
                     {/* ── Categories ── */}
                     <View style={styles.sectionHeader}>
-                        <Text style={styles.sectionTitle}>Category</Text>
-                        <TouchableOpacity><Text style={styles.seeAll}>See All</Text></TouchableOpacity>
+                        <Text style={[styles.sectionTitle, { color: colors.text }]}>Category</Text>
+                        <TouchableOpacity><Text style={[styles.seeAll, { color: colors.primary }]}>See All</Text></TouchableOpacity>
                     </View>
                     <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.categoriesScroll}>
                         {CATEGORIES.map(cat => (
                             <TouchableOpacity
                                 key={cat.id}
-                                style={[styles.catChip, activeCategory === cat.id && styles.catChipActive]}
+                                style={[styles.catChip, { backgroundColor: colors.card, borderColor: colors.border }, activeCategory === cat.id && styles.catChipActive]}
                                 onPress={() => setActiveCategory(cat.id)}
                             >
-                                <Text style={[styles.catText, activeCategory === cat.id && styles.catTextActive]}>
+                                <Text style={[styles.catText, { color: colors.textLight }, activeCategory === cat.id && styles.catTextActive]}>
                                     {cat.label}
                                 </Text>
                             </TouchableOpacity>
@@ -157,8 +159,8 @@ export default function HomeScreen({ navigation }) {
 
                     {/* ── Most Popular ── */}
                     <View style={styles.sectionHeader}>
-                        <Text style={styles.sectionTitle}>Most Popular</Text>
-                        <TouchableOpacity><Text style={styles.seeAll}>See All</Text></TouchableOpacity>
+                        <Text style={[styles.sectionTitle, { color: colors.text }]}>Most Popular</Text>
+                        <TouchableOpacity><Text style={[styles.seeAll, { color: colors.primary }]}>See All</Text></TouchableOpacity>
                     </View>
 
                     <FlatList
@@ -201,7 +203,7 @@ const styles = StyleSheet.create({
     headerRight: { flexDirection: 'row', alignItems: 'center', gap: SPACING.md },
     iconBtn: {
         width: 44, height: 44, borderRadius: 22,
-        backgroundColor: COLORS.white, borderWidth: 1, borderColor: COLORS.border,
+        borderWidth: 1,
         alignItems: 'center', justifyContent: 'center',
     },
     avatarContainer: { width: 46, height: 46, borderRadius: 23, overflow: 'hidden', borderWidth: 2, borderColor: COLORS.primary },
@@ -210,11 +212,11 @@ const styles = StyleSheet.create({
     searchRow: { flexDirection: 'row', paddingHorizontal: SPACING.lg, marginBottom: SPACING.lg, gap: SPACING.sm },
     searchBar: {
         flex: 1, flexDirection: 'row', alignItems: 'center',
-        backgroundColor: COLORS.card, borderRadius: 12, paddingHorizontal: SPACING.md,
-        height: 48, borderWidth: 1, borderColor: COLORS.border,
+        borderRadius: 12, paddingHorizontal: SPACING.md,
+        height: 48, borderWidth: 1,
     },
     searchIcon: { marginRight: SPACING.sm },
-    searchInput: { flex: 1, ...TYPOGRAPHY.bodySmall, color: COLORS.text },
+    searchInput: { flex: 1, ...TYPOGRAPHY.bodySmall },
     filterBtn: {
         width: 48, height: 48, backgroundColor: COLORS.primary,
         borderRadius: 12, alignItems: 'center', justifyContent: 'center',
@@ -243,16 +245,16 @@ const styles = StyleSheet.create({
         paddingHorizontal: SPACING.lg, marginBottom: SPACING.md,
     },
     sectionTitle: { ...TYPOGRAPHY.h3 },
-    seeAll: { ...TYPOGRAPHY.bodySmall, color: COLORS.primary, fontWeight: '600' },
+    seeAll: { ...TYPOGRAPHY.bodySmall, fontWeight: '600' },
 
     categoriesScroll: { paddingLeft: SPACING.lg, marginBottom: SPACING.lg },
     catChip: {
         paddingVertical: 8, paddingHorizontal: SPACING.md,
-        backgroundColor: COLORS.card, borderRadius: 20, marginRight: SPACING.sm,
-        borderWidth: 1, borderColor: COLORS.border,
+        borderRadius: 20, marginRight: SPACING.sm,
+        borderWidth: 1,
     },
     catChipActive: { backgroundColor: COLORS.primary, borderColor: COLORS.primary },
-    catText: { ...TYPOGRAPHY.bodySmall, color: COLORS.textLight, fontWeight: '600' },
+    catText: { ...TYPOGRAPHY.bodySmall, fontWeight: '600' },
     catTextActive: { color: COLORS.white },
 
     gridContainer: { paddingHorizontal: SPACING.lg, paddingBottom: SPACING.xxl },

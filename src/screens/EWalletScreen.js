@@ -1,38 +1,69 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     View, Text, StyleSheet, Image, ScrollView,
-    TouchableOpacity, FlatList
+    TouchableOpacity, FlatList, ActivityIndicator
 } from 'react-native';
 import { COLORS, TYPOGRAPHY, SPACING, SHADOWS } from '../constants/theme';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { TRANSACTIONS } from '../constants/data';
 import { useTheme } from '../contexts/ThemeContext';
+import { useAuth } from '../contexts/AuthContext';
+import { db } from '../config/firebase';
+import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
 
 export default function EWalletScreen({ navigation }) {
     const { isDark, colors } = useTheme();
+    const { currentUser, userData } = useAuth();
+    const [transactions, setTransactions] = useState([]);
+    const [loading, setLoading] = useState(true);
+
+    const balance = userData?.balance || 0;
+    const displayName = userData?.name || currentUser?.displayName || 'User';
+
+    useEffect(() => {
+        if (!currentUser) return;
+
+        const transactionsRef = collection(db, 'users', currentUser.uid, 'transactions');
+        const q = query(transactionsRef, orderBy('createdAt', 'desc'));
+
+        const unsubscribe = onSnapshot(q, (snapshot) => {
+            const list = snapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data(),
+            }));
+            setTransactions(list);
+            setLoading(false);
+        }, (error) => {
+            console.error("Error fetching transactions:", error);
+            setLoading(false);
+        });
+
+        return () => unsubscribe();
+    }, [currentUser]);
     const renderTransaction = ({ item }) => (
         <TouchableOpacity
-            style={styles.transactionItem}
+            style={[styles.transactionItem, { borderBottomColor: colors.border }]}
             onPress={() => navigation.navigate('EReceipt', { transaction: item })}
         >
             <View style={styles.iconContainer}>
                 {item.isTopUp ? (
-                    <View style={styles.topUpIcon}>
+                    <View style={[styles.topUpIcon, { backgroundColor: isDark ? 'rgba(76, 175, 80, 0.1)' : COLORS.primaryLight }]}>
                         <Ionicons name="wallet-outline" size={24} color={COLORS.primary} />
                     </View>
                 ) : (
-                    <Image source={{ uri: item.icon }} style={styles.itemImage} />
+                    <View style={[styles.spentIcon, { backgroundColor: isDark ? 'rgba(255, 76, 76, 0.1)' : 'rgba(255, 76, 76, 0.05)' }]}>
+                        <Ionicons name="cart-outline" size={24} color="#FF4C4C" />
+                    </View>
                 )}
             </View>
             <View style={styles.itemInfo}>
-                <Text style={[styles.itemName, { color: colors.text }]}>{item.name}</Text>
-                <Text style={[styles.itemDate, { color: colors.textLight }]}>{item.date}</Text>
+                <Text style={[styles.itemName, { color: colors.text }]}>{item.name || (item.isTopUp ? 'Top Up Wallet' : 'Order Payment')}</Text>
+                <Text style={[styles.itemDate, { color: colors.textLight }]}>{item.date || 'Today'}</Text>
             </View>
             <View style={styles.amountInfo}>
                 <Text style={[styles.amount, { color: colors.text }]}>${item.amount.toFixed(2)}</Text>
                 <View style={styles.typeTag}>
-                    <Text style={[styles.typeText, { color: colors.textLight }]}>{item.type}</Text>
+                    <Text style={[styles.typeText, { color: colors.textLight }]}>{item.type || (item.isTopUp ? 'Top Up' : 'Payment')}</Text>
                     <Ionicons
                         name={item.isTopUp ? "arrow-up-circle" : "arrow-down-circle"}
                         size={14}
@@ -54,123 +85,118 @@ export default function EWalletScreen({ navigation }) {
                     <TouchableOpacity style={styles.headerBtn}>
                         <Ionicons name="search-outline" size={24} color={colors.text} />
                     </TouchableOpacity>
-                    <TouchableOpacity style={styles.headerBtn}>
-                        <Ionicons name="ellipsis-horizontal-circle" size={24} color={colors.text} />
-                    </TouchableOpacity>
                 </View>
             </View>
 
-            <ScrollView showsVerticalScrollIndicator={false}>
-                {/* Wallet Card */}
-                <View style={styles.cardContainer}>
-                    <View style={styles.card}>
-                        <View style={styles.cardHeader}>
-                            <View>
-                                <Text style={styles.userName}>Andrew Ainsley</Text>
-                                <Text style={styles.cardNumber}>•••• •••• •••• 3629</Text>
+            <View style={{ flex: 1 }}>
+                <FlatList
+                    data={transactions}
+                    keyExtractor={item => item.id}
+                    renderItem={renderTransaction}
+                    ListHeaderComponent={
+                        <>
+                            {/* Wallet Card */}
+                            <View style={styles.cardContainer}>
+                                <View style={[styles.card, { backgroundColor: COLORS.primary }]}>
+                                    <View style={styles.cardHeader}>
+                                        <View>
+                                            <Text style={styles.userName}>{displayName}</Text>
+                                            <Text style={styles.cardNumber}>•••• •••• •••• {currentUser?.uid?.slice(-4) || '0000'}</Text>
+                                        </View>
+                                        <Image
+                                            source={{ uri: 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/5e/Visa_Inc._logo.svg/2560px-Visa_Inc._logo.svg.png' }}
+                                            style={styles.cardLogo}
+                                            resizeMode="contain"
+                                        />
+                                    </View>
+                                    <View style={styles.cardFooter}>
+                                        <View>
+                                            <Text style={styles.balanceLabel}>Your balance</Text>
+                                            <Text style={styles.balanceValue}>${balance.toLocaleString()}</Text>
+                                        </View>
+                                        <TouchableOpacity
+                                            style={styles.topUpBtn}
+                                            onPress={() => navigation.navigate('TopUpWallet')}
+                                        >
+                                            <Ionicons name="add-circle" size={20} color={COLORS.white} />
+                                            <Text style={styles.topUpText}>Top Up</Text>
+                                        </TouchableOpacity>
+                                    </View>
+                                </View>
                             </View>
-                            <Image
-                                source={{ uri: 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/5e/Visa_Inc._logo.svg/2560px-Visa_Inc._logo.svg.png' }}
-                                style={styles.cardLogo}
-                                resizeMode="contain"
-                            />
-                        </View>
-                        <View style={styles.cardFooter}>
-                            <View>
-                                <Text style={styles.balanceLabel}>Your balance</Text>
-                                <Text style={styles.balanceValue}>$9,449</Text>
+
+                            {/* Transaction History Header */}
+                            <View style={styles.historySection}>
+                                <View style={styles.sectionHeader}>
+                                    <Text style={[styles.sectionTitle, { color: colors.text }]}>Transaction History</Text>
+                                    <TouchableOpacity onPress={() => navigation.navigate('TransactionHistory')}>
+                                        <Text style={styles.seeAll}>See All</Text>
+                                    </TouchableOpacity>
+                                </View>
                             </View>
-                            <TouchableOpacity
-                                style={styles.topUpBtn}
-                                onPress={() => navigation.navigate('TopUpWallet')}
-                            >
-                                <Ionicons name="add-circle" size={20} color={COLORS.white} />
-                                <Text style={styles.topUpText}>Top Up</Text>
-                            </TouchableOpacity>
-                        </View>
-                    </View>
-                </View>
-
-                {/* Transaction History */}
-                <View style={styles.historySection}>
-                    <View style={styles.sectionHeader}>
-                        <Text style={styles.sectionTitle}>Transaction History</Text>
-                        <TouchableOpacity onPress={() => navigation.navigate('TransactionHistory')}>
-                            <Text style={styles.seeAll}>See All</Text>
-                        </TouchableOpacity>
-                    </View>
-
-                    <FlatList
-                        data={TRANSACTIONS}
-                        keyExtractor={item => item.id}
-                        renderItem={renderTransaction}
-                        scrollEnabled={false}
-                        contentContainerStyle={styles.list}
-                    />
-                </View>
-            </ScrollView>
+                        </>
+                    }
+                    ListEmptyComponent={
+                        !loading && (
+                            <View style={styles.emptyContainer}>
+                                <Ionicons name="receipt-outline" size={60} color={colors.textLight} style={{ opacity: 0.3 }} />
+                                <Text style={[styles.emptyText, { color: colors.textLight }]}>No transactions yet</Text>
+                            </View>
+                        )
+                    }
+                    contentContainerStyle={{ paddingBottom: 100 }}
+                />
+            </View>
         </SafeAreaView>
     );
 }
 
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: COLORS.white },
+    container: { flex: 1 },
     header: {
         flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
         paddingHorizontal: SPACING.lg, paddingVertical: SPACING.md,
     },
     headerLeft: { flexDirection: 'row', alignItems: 'center', gap: 12 },
     headerTitle: { ...TYPOGRAPHY.h2 },
-    headerRight: { flexDirection: 'row', gap: 16 },
+    headerRight: { flexDirection: 'row', alignItems: 'center', gap: 8 },
     headerBtn: { padding: 4 },
-
-    cardContainer: { paddingHorizontal: SPACING.lg, marginVertical: SPACING.md },
+    cardContainer: { paddingHorizontal: SPACING.lg, paddingVertical: SPACING.md },
     card: {
-        backgroundColor: COLORS.primary,
-        borderRadius: 28,
-        padding: 24,
-        height: 180,
-        justifyContent: 'space-between',
-        ...SHADOWS.large,
+        padding: 24, borderRadius: 32,
+        ...SHADOWS.medium,
     },
-    cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
-    userName: { ...TYPOGRAPHY.body, color: COLORS.white, fontWeight: '700' },
+    cardHeader: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 40 },
+    userName: { ...TYPOGRAPHY.h3, color: COLORS.white, marginBottom: 4 },
     cardNumber: { ...TYPOGRAPHY.bodySmall, color: COLORS.white, opacity: 0.8 },
     cardLogo: { width: 50, height: 20 },
-    cardFooter: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-end' },
-    balanceLabel: { ...TYPOGRAPHY.bodySmall, color: COLORS.white, opacity: 0.8 },
+    balanceLabel: { ...TYPOGRAPHY.bodySmall, color: COLORS.white, opacity: 0.8, marginBottom: 4 },
     balanceValue: { ...TYPOGRAPHY.h1, color: COLORS.white, fontSize: 32 },
     topUpBtn: {
         flexDirection: 'row', alignItems: 'center', gap: 8,
-        backgroundColor: COLORS.white + '30',
-        paddingVertical: 8, paddingHorizontal: 16,
-        borderRadius: 20,
+        backgroundColor: 'rgba(255,255,255,0.2)', paddingHorizontal: 16,
+        paddingVertical: 10, borderRadius: 20, alignSelf: 'flex-end',
     },
     topUpText: { ...TYPOGRAPHY.bodySmall, color: COLORS.white, fontWeight: '700' },
-
-    historySection: { paddingHorizontal: SPACING.lg, marginTop: SPACING.xl },
-    sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: SPACING.lg },
+    historySection: { paddingHorizontal: SPACING.lg, marginTop: SPACING.lg },
+    sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: SPACING.md },
     sectionTitle: { ...TYPOGRAPHY.h3 },
     seeAll: { ...TYPOGRAPHY.bodySmall, color: COLORS.primary, fontWeight: '700' },
-
-    list: { paddingBottom: SPACING.xl },
     transactionItem: {
-        flexDirection: 'row', alignItems: 'center',
-        paddingVertical: SPACING.md,
-        marginBottom: SPACING.sm,
+        flexDirection: 'row', alignItems: 'center', paddingVertical: SPACING.md,
+        paddingHorizontal: SPACING.lg, borderBottomWidth: 1,
     },
-    iconContainer: {
-        width: 54, height: 54, borderRadius: 27,
-        alignItems: 'center', justifyContent: 'center',
-        marginRight: SPACING.md,
-    },
-    topUpIcon: { width: 44, height: 44, borderRadius: 22, backgroundColor: COLORS.primaryLight, alignItems: 'center', justifyContent: 'center' },
-    itemImage: { width: 54, height: 54, borderRadius: 27 },
+    iconContainer: { marginRight: SPACING.md },
+    topUpIcon: { width: 50, height: 50, borderRadius: 25, alignItems: 'center', justifyContent: 'center' },
+    spentIcon: { width: 50, height: 50, borderRadius: 25, alignItems: 'center', justifyContent: 'center' },
+    itemImage: { width: 50, height: 50, borderRadius: 25 },
     itemInfo: { flex: 1 },
-    itemName: { ...TYPOGRAPHY.body, fontWeight: '700' },
-    itemDate: { ...TYPOGRAPHY.bodySmall, marginTop: 4 },
+    itemName: { ...TYPOGRAPHY.body, fontWeight: '700', marginBottom: 4 },
+    itemDate: { fontSize: 12 },
     amountInfo: { alignItems: 'flex-end' },
-    amount: { ...TYPOGRAPHY.body, fontWeight: '700' },
-    typeTag: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 4 },
-    typeText: { ...TYPOGRAPHY.bodySmall, fontSize: 10 },
+    amount: { ...TYPOGRAPHY.body, fontWeight: '700', marginBottom: 4 },
+    typeTag: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+    typeText: { fontSize: 10 },
+    emptyContainer: { alignItems: 'center', justifyContent: 'center', paddingTop: 60 },
+    emptyText: { ...TYPOGRAPHY.body, marginTop: 12, opacity: 0.6 },
 });

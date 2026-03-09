@@ -4,10 +4,11 @@ import { COLORS, TYPOGRAPHY, SPACING } from '../constants/theme';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import Button from '../components/Button';
+import { useTheme } from '../contexts/ThemeContext';
 
 const PRESETS = [10, 20, 50, 100, 200, 250, 500, 750, 1000];
 
-const Numpad = ({ onPressKey, onDelete }) => {
+const Numpad = ({ onPressKey, onDelete, colors }) => {
     const rows = [['1', '2', '3'], ['4', '5', '6'], ['7', '8', '9'], ['', '0', 'delete']];
     return (
         <View style={numpadStyles.container}>
@@ -20,8 +21,8 @@ const Numpad = ({ onPressKey, onDelete }) => {
                             onPress={() => key === 'delete' ? onDelete() : key && onPressKey(key)}
                         >
                             {key === 'delete'
-                                ? <Ionicons name="backspace-outline" size={28} color={COLORS.text} />
-                                : <Text style={numpadStyles.keyText}>{key}</Text>}
+                                ? <Ionicons name="backspace-outline" size={28} color={colors.text} />
+                                : <Text style={[numpadStyles.keyText, { color: colors.text }]}>{key}</Text>}
                         </TouchableOpacity>
                     ))}
                 </View>
@@ -34,30 +35,31 @@ const numpadStyles = StyleSheet.create({
     container: { width: '100%', marginTop: SPACING.lg },
     row: { flexDirection: 'row', justifyContent: 'space-around', marginBottom: SPACING.md },
     key: { width: 70, height: 50, alignItems: 'center', justifyContent: 'center' },
-    keyText: { fontSize: 28, fontWeight: '500', color: COLORS.text },
+    keyText: { fontSize: 28, fontWeight: '500' },
 });
 
 export default function TopUpWalletScreen({ navigation }) {
+    const { colors, isDark } = useTheme();
     const [amount, setAmount] = useState('100');
 
     const handleKey = (key) => setAmount(prev => (prev === '0' ? key : prev + key));
     const handleDelete = () => setAmount(prev => prev.length > 1 ? prev.slice(0, -1) : '0');
 
     return (
-        <SafeAreaView style={styles.container}>
+        <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
             <View style={styles.header}>
                 <TouchableOpacity onPress={() => navigation.goBack()}>
-                    <Ionicons name="arrow-back" size={24} color={COLORS.text} />
+                    <Ionicons name="arrow-back" size={24} color={colors.text} />
                 </TouchableOpacity>
-                <Text style={styles.headerTitle}>Top Up E-Wallet</Text>
+                <Text style={[styles.headerTitle, { color: colors.text }]}>Top Up E-Wallet</Text>
             </View>
 
             <View style={styles.content}>
-                <Text style={styles.label}>Enter the amount of top up</Text>
+                <Text style={[styles.label, { color: colors.textLight }]}>Enter the amount of top up</Text>
 
-                <View style={styles.amountContainer}>
+                <View style={[styles.amountContainer, { borderColor: COLORS.primary }]}>
                     <Text style={styles.currency}>$</Text>
-                    <Text style={styles.amountText}>{amount}</Text>
+                    <Text style={[styles.amountText, { color: colors.text }]}>{amount}</Text>
                 </View>
 
                 {/* Presets */}
@@ -65,10 +67,16 @@ export default function TopUpWalletScreen({ navigation }) {
                     {PRESETS.map(p => (
                         <TouchableOpacity
                             key={p}
-                            style={[styles.presetItem, amount === String(p) && styles.presetActive]}
+                            style={[
+                                styles.presetItem,
+                                amount === String(p) ? styles.presetActive : { borderColor: colors.border }
+                            ]}
                             onPress={() => setAmount(String(p))}
                         >
-                            <Text style={[styles.presetText, amount === String(p) && styles.presetTextActive]}>${p}</Text>
+                            <Text style={[
+                                styles.presetText,
+                                amount === String(p) ? styles.presetTextActive : { color: colors.text }
+                            ]}>${p}</Text>
                         </TouchableOpacity>
                     ))}
                 </View>
@@ -79,37 +87,37 @@ export default function TopUpWalletScreen({ navigation }) {
                     style={styles.continueBtn}
                 />
 
-                <Numpad onPressKey={handleKey} onDelete={handleDelete} />
+                <Numpad onPressKey={handleKey} onDelete={handleDelete} colors={colors} />
             </View>
         </SafeAreaView>
     );
 }
 
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: COLORS.white },
+    container: { flex: 1 },
     header: {
         flexDirection: 'row', alignItems: 'center', gap: 16,
         paddingHorizontal: SPACING.lg, paddingVertical: SPACING.md,
     },
     headerTitle: { ...TYPOGRAPHY.h3 },
     content: { flex: 1, paddingHorizontal: SPACING.lg, alignItems: 'center' },
-    label: { ...TYPOGRAPHY.body, color: COLORS.textLight, marginTop: SPACING.xl, marginBottom: SPACING.xl },
+    label: { ...TYPOGRAPHY.body, marginTop: SPACING.xl, marginBottom: SPACING.xl },
     amountContainer: {
         flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-        borderWidth: 2, borderColor: COLORS.primary, borderRadius: 24,
+        borderWidth: 2, borderRadius: 24,
         paddingVertical: 16, paddingHorizontal: 40, width: '100%',
         marginBottom: SPACING.xl,
     },
     currency: { ...TYPOGRAPHY.h1, color: COLORS.primary, fontSize: 32, marginRight: 8 },
-    amountText: { ...TYPOGRAPHY.h1, color: COLORS.primary, fontSize: 32 },
+    amountText: { ...TYPOGRAPHY.h1, fontSize: 32 },
     presetsGrid: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 12, marginBottom: SPACING.xl },
     presetItem: {
         width: '30%', height: 40, borderRadius: 20,
-        borderWidth: 1.5, borderColor: COLORS.primary,
+        borderWidth: 1.5,
         alignItems: 'center', justifyContent: 'center',
     },
-    presetActive: { backgroundColor: COLORS.primary },
-    presetText: { ...TYPOGRAPHY.bodySmall, color: COLORS.primary, fontWeight: '700' },
+    presetActive: { backgroundColor: COLORS.primary, borderColor: COLORS.primary },
+    presetText: { ...TYPOGRAPHY.bodySmall, fontWeight: '700' },
     presetTextActive: { color: COLORS.white },
     continueBtn: { width: '100%', borderRadius: 30 },
 });

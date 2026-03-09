@@ -4,6 +4,7 @@ import { COLORS, TYPOGRAPHY, SPACING } from '../constants/theme';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import Button from '../components/Button';
+import { useTheme } from '../contexts/ThemeContext';
 
 const METHODS = [
     { id: 'paypal', label: 'PayPal', icon: 'https://upload.wikimedia.org/wikipedia/commons/b/b5/PayPal.svg' },
@@ -14,31 +15,36 @@ const METHODS = [
 
 export default function TopUpMethodScreen({ route, navigation }) {
     const { amount } = route.params;
+    const { colors, isDark } = useTheme();
     const [selected, setSelected] = useState('paypal');
 
     return (
-        <SafeAreaView style={styles.container}>
+        <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
             <View style={styles.header}>
                 <TouchableOpacity onPress={() => navigation.goBack()}>
-                    <Ionicons name="arrow-back" size={24} color={COLORS.text} />
+                    <Ionicons name="arrow-back" size={24} color={colors.text} />
                 </TouchableOpacity>
-                <Text style={styles.headerTitle}>Top Up E-Wallet</Text>
+                <Text style={[styles.headerTitle, { color: colors.text }]}>Top Up E-Wallet</Text>
             </View>
 
             <ScrollView contentContainerStyle={styles.content}>
-                <Text style={styles.label}>Select the top up method you want to use</Text>
+                <Text style={[styles.label, { color: colors.textLight }]}>Select the top up method you want to use</Text>
 
                 {METHODS.map(m => (
                     <TouchableOpacity
                         key={m.id}
-                        style={[styles.methodItem, selected === m.id && styles.methodActive]}
+                        style={[
+                            styles.methodItem,
+                            { backgroundColor: colors.card, borderColor: selected === m.id ? COLORS.primary : colors.border },
+                            selected === m.id && styles.methodActive
+                        ]}
                         onPress={() => setSelected(m.id)}
                     >
                         <View style={styles.methodLeft}>
                             <Image source={{ uri: m.icon }} style={styles.methodIcon} resizeMode="contain" />
-                            <Text style={styles.methodLabel}>{m.label}</Text>
+                            <Text style={[styles.methodLabel, { color: colors.text }]}>{m.label}</Text>
                         </View>
-                        <View style={[styles.radio, selected === m.id && styles.radioActive]}>
+                        <View style={[styles.radio, { borderColor: COLORS.primary }]}>
                             {selected === m.id && <View style={styles.radioInner} />}
                         </View>
                     </TouchableOpacity>
@@ -52,7 +58,7 @@ export default function TopUpMethodScreen({ route, navigation }) {
                 />
             </ScrollView>
 
-            <View style={styles.footer}>
+            <View style={[styles.footer, { backgroundColor: colors.background, borderTopColor: colors.border }]}>
                 <Button
                     title="Continue"
                     onPress={() => navigation.navigate('WalletPin', { amount, method: selected })}
@@ -64,35 +70,34 @@ export default function TopUpMethodScreen({ route, navigation }) {
 }
 
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: COLORS.white },
+    container: { flex: 1 },
     header: {
         flexDirection: 'row', alignItems: 'center', gap: 16,
         paddingHorizontal: SPACING.lg, paddingVertical: SPACING.md,
     },
     headerTitle: { ...TYPOGRAPHY.h3 },
-    content: { paddingHorizontal: SPACING.lg, paddingBottom: 100 },
-    label: { ...TYPOGRAPHY.body, color: COLORS.textLight, marginVertical: SPACING.xl },
+    content: { paddingHorizontal: SPACING.lg, paddingBottom: 120 },
+    label: { ...TYPOGRAPHY.body, marginVertical: SPACING.xl },
     methodItem: {
         flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-        padding: SPACING.lg, borderRadius: 20, borderWidth: 1.5, borderColor: COLORS.border,
-        backgroundColor: COLORS.white, marginBottom: SPACING.md,
+        padding: SPACING.lg, borderRadius: 20, borderWidth: 1.5,
+        marginBottom: SPACING.md,
     },
-    methodActive: { borderColor: COLORS.primary, backgroundColor: COLORS.primaryLight + '20' },
+    methodActive: { backgroundColor: COLORS.primary + '10' },
     methodLeft: { flexDirection: 'row', alignItems: 'center', gap: 16 },
     methodIcon: { width: 40, height: 24 },
     methodLabel: { ...TYPOGRAPHY.body, fontWeight: '700' },
     radio: {
         width: 20, height: 20, borderRadius: 10,
-        borderWidth: 2, borderColor: COLORS.primary,
+        borderWidth: 2,
         alignItems: 'center', justifyContent: 'center',
     },
-    radioActive: { borderColor: COLORS.primary },
     radioInner: { width: 10, height: 10, borderRadius: 5, backgroundColor: COLORS.primary },
     addBtn: { borderRadius: 30, marginTop: SPACING.md },
     footer: {
         position: 'absolute', bottom: 0, left: 0, right: 0,
         paddingHorizontal: SPACING.lg, paddingBottom: SPACING.xl, paddingTop: SPACING.md,
-        backgroundColor: COLORS.white, borderTopWidth: 1, borderTopColor: COLORS.border,
+        borderTopWidth: 1,
     },
     continueBtn: { borderRadius: 30 },
 });

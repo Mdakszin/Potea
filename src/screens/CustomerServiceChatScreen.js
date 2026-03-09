@@ -6,9 +6,11 @@ import { Ionicons } from '@expo/vector-icons';
 import { db } from '../config/firebase';
 import { collection, addDoc, query, orderBy, onSnapshot, serverTimestamp } from 'firebase/firestore';
 import { useAuth } from '../contexts/AuthContext';
+import { useTheme } from '../contexts/ThemeContext';
 
 export default function CustomerServiceChatScreen({ navigation }) {
     const { currentUser } = useAuth();
+    const { colors, isDark } = useTheme();
     const [messages, setMessages] = useState([]);
     const [input, setInput] = useState('');
     const [loading, setLoading] = useState(true);
@@ -29,7 +31,6 @@ export default function CustomerServiceChatScreen({ navigation }) {
             setLoading(false);
         });
 
-        // Initialize with welcome message if chat is empty
         return () => unsubscribe();
     }, [currentUser]);
 
@@ -44,44 +45,50 @@ export default function CustomerServiceChatScreen({ navigation }) {
         const now = new Date();
         const timeString = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
-        // Add user message to Firestore
-        await addDoc(messagesRef, {
-            text: text,
-            sender: 'user',
-            time: timeString,
-            createdAt: serverTimestamp()
-        });
-
-        // Mock auto-reply written to Firestore
-        setTimeout(async () => {
-            const agentTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        try {
+            // Add user message to Firestore
             await addDoc(messagesRef, {
-                text: 'Thank you for your message. An agent will be with you shortly.',
-                sender: 'agent',
-                time: agentTime,
+                text: text,
+                sender: 'user',
+                time: timeString,
                 createdAt: serverTimestamp()
             });
-        }, 1500);
+
+            // Mock auto-reply written to Firestore if it's the first message or specific trigger
+            if (messages.length === 0) {
+                setTimeout(async () => {
+                    const agentTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                    await addDoc(messagesRef, {
+                        text: 'Thank you for contacting Potea! Our team will get back to you shortly.',
+                        sender: 'agent',
+                        time: agentTime,
+                        createdAt: serverTimestamp()
+                    });
+                }, 1000);
+            }
+        } catch (error) {
+            console.error("Error sending message:", error);
+        }
     };
 
     return (
-        <SafeAreaView style={styles.container}>
-            <View style={styles.header}>
+        <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+            <View style={[styles.header, { borderBottomColor: colors.border }]}>
                 <View style={styles.headerLeft}>
                     <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-                        <Ionicons name="arrow-back" size={24} color={COLORS.text} />
+                        <Ionicons name="arrow-back" size={24} color={colors.text} />
                     </TouchableOpacity>
                     <Image
                         source={{ uri: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&w=100&q=80' }}
                         style={styles.agentAvatar}
                     />
                     <View>
-                        <Text style={styles.agentName}>Customer Service</Text>
+                        <Text style={[styles.agentName, { color: colors.text }]}>Customer Service</Text>
                         <Text style={styles.agentStatus}>Online</Text>
                     </View>
                 </View>
                 <TouchableOpacity style={styles.headerBtn}>
-                    <Ionicons name="call-outline" size={24} color={COLORS.text} />
+                    <Ionicons name="call-outline" size={24} color={colors.text} />
                 </TouchableOpacity>
             </View>
 
@@ -96,13 +103,13 @@ export default function CustomerServiceChatScreen({ navigation }) {
                     </View>
                 )}
                 {!loading && messages.length === 0 && (
-                    <View style={styles.messageContainer}>
-                        <View style={[styles.bubble, styles.agentBubble]}>
-                            <Text style={[styles.messageText, styles.agentText]}>
+                    <View style={styles.welcomeContainer}>
+                        <View style={[styles.bubble, styles.agentBubble, { backgroundColor: colors.card }]}>
+                            <Text style={[styles.messageText, { color: colors.text }]}>
                                 Hello! How can we help you today?
                             </Text>
                         </View>
-                        <Text style={styles.messageTime}>Now</Text>
+                        <Text style={[styles.messageTime, { color: colors.textLight }]}>Now</Text>
                     </View>
                 )}
                 {messages.map((msg) => (
@@ -115,16 +122,18 @@ export default function CustomerServiceChatScreen({ navigation }) {
                     >
                         <View style={[
                             styles.bubble,
-                            msg.sender === 'user' ? styles.userBubble : styles.agentBubble
+                            msg.sender === 'user'
+                                ? [styles.userBubble, { backgroundColor: COLORS.primary }]
+                                : [styles.agentBubble, { backgroundColor: colors.card }]
                         ]}>
                             <Text style={[
                                 styles.messageText,
-                                msg.sender === 'user' ? styles.userText : styles.agentText
+                                msg.sender === 'user' ? styles.userText : { color: colors.text }
                             ]}>
                                 {msg.text}
                             </Text>
                         </View>
-                        <Text style={styles.messageTime}>{msg.time}</Text>
+                        <Text style={[styles.messageTime, { color: colors.textLight }]}>{msg.time}</Text>
                     </View>
                 ))}
             </ScrollView>
@@ -133,20 +142,27 @@ export default function CustomerServiceChatScreen({ navigation }) {
                 behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
                 keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
             >
-                <View style={styles.inputContainer}>
-                    <TouchableOpacity style={styles.attachBtn}>
-                        <Ionicons name="add" size={24} color={COLORS.primary} />
-                    </TouchableOpacity>
-                    <TextInput
-                        style={styles.input}
-                        placeholder="Type a message..."
-                        value={input}
-                        onChangeText={setInput}
-                        multiline
-                    />
-                    <TouchableOpacity style={styles.sendBtn} onPress={sendMessage}>
-                        <Ionicons name="send" size={20} color={COLORS.white} />
-                    </TouchableOpacity>
+                <View style={[styles.inputArea, { backgroundColor: colors.background, borderTopColor: colors.border }]}>
+                    <View style={[styles.inputContainer, { backgroundColor: colors.card }]}>
+                        <TouchableOpacity style={styles.attachBtn}>
+                            <Ionicons name="add" size={24} color={COLORS.primary} />
+                        </TouchableOpacity>
+                        <TextInput
+                            style={[styles.input, { color: colors.text }]}
+                            placeholder="Type a message..."
+                            placeholderTextColor={colors.textLight}
+                            value={input}
+                            onChangeText={setInput}
+                            multiline
+                        />
+                        <TouchableOpacity
+                            style={[styles.sendBtn, { backgroundColor: COLORS.primary }]}
+                            onPress={sendMessage}
+                            disabled={!input.trim()}
+                        >
+                            <Ionicons name="send" size={20} color={COLORS.white} />
+                        </TouchableOpacity>
+                    </View>
                 </View>
             </KeyboardAvoidingView>
         </SafeAreaView>
@@ -154,11 +170,11 @@ export default function CustomerServiceChatScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: COLORS.white },
+    container: { flex: 1 },
     header: {
         flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
         paddingHorizontal: SPACING.lg, paddingVertical: SPACING.md,
-        borderBottomWidth: 1, borderBottomColor: COLORS.border,
+        borderBottomWidth: 1,
     },
     headerLeft: { flexDirection: 'row', alignItems: 'center', gap: 12 },
     backBtn: { padding: 4 },
@@ -167,29 +183,34 @@ const styles = StyleSheet.create({
     agentStatus: { fontSize: 12, color: COLORS.primary, fontWeight: '600' },
     headerBtn: { padding: 8 },
     chatContent: { padding: SPACING.lg, paddingBottom: 20 },
+    welcomeContainer: { marginBottom: SPACING.lg, maxWidth: '80%', alignSelf: 'flex-start' },
     messageContainer: { marginBottom: SPACING.lg, maxWidth: '80%' },
     userMessage: { alignSelf: 'flex-end', alignItems: 'flex-end' },
     agentMessage: { alignSelf: 'flex-start', alignItems: 'flex-start' },
     bubble: { padding: 16, borderRadius: 20 },
-    userBubble: { backgroundColor: COLORS.primary, borderBottomRightRadius: 4 },
-    agentBubble: { backgroundColor: COLORS.card, borderBottomLeftRadius: 4 },
+    userBubble: { borderBottomRightRadius: 4 },
+    agentBubble: { borderBottomLeftRadius: 4 },
     messageText: { ...TYPOGRAPHY.bodySmall, lineHeight: 20 },
     userText: { color: COLORS.white },
-    agentText: { color: COLORS.text },
-    messageTime: { fontSize: 10, color: COLORS.textLight, marginTop: 4 },
-    inputContainer: {
-        flexDirection: 'row', alignItems: 'center', padding: SPACING.md,
-        backgroundColor: COLORS.white, borderTopWidth: 1, borderTopColor: COLORS.border,
-        gap: 12, paddingBottom: Platform.OS === 'ios' ? 30 : 16,
+    messageTime: { fontSize: 10, marginTop: 4 },
+    inputArea: {
+        paddingHorizontal: SPACING.md,
+        paddingTop: SPACING.sm,
+        paddingBottom: Platform.OS === 'ios' ? 30 : 16,
+        borderTopWidth: 1,
     },
-    attachBtn: { width: 44, height: 44, borderRadius: 22, backgroundColor: COLORS.card, alignItems: 'center', justifyContent: 'center' },
+    inputContainer: {
+        flexDirection: 'row', alignItems: 'center',
+        paddingHorizontal: 8, paddingVertical: 8,
+        borderRadius: 28, gap: 8,
+    },
+    attachBtn: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center' },
     input: {
-        flex: 1, backgroundColor: COLORS.card, borderRadius: 22,
-        paddingHorizontal: 16, paddingVertical: 10, ...TYPOGRAPHY.bodySmall,
-        maxHeight: 100,
+        flex: 1, paddingHorizontal: 12, paddingVertical: 8,
+        ...TYPOGRAPHY.bodySmall, maxHeight: 100,
     },
     sendBtn: {
-        width: 44, height: 44, borderRadius: 22, backgroundColor: COLORS.primary,
+        width: 40, height: 40, borderRadius: 20,
         alignItems: 'center', justifyContent: 'center',
     },
 });

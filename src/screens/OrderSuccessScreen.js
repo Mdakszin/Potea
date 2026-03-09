@@ -4,6 +4,7 @@ import { COLORS, TYPOGRAPHY, SPACING, SHADOWS } from '../constants/theme';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import Button from '../components/Button';
+import { useTheme } from '../contexts/ThemeContext';
 
 // Animated confetti dot
 const ConfettiDot = ({ delay, x, color, size }) => {
@@ -53,6 +54,7 @@ const CONFETTI = [
 export default function OrderSuccessScreen({ route, navigation }) {
     const { orderId = '#PTK-000000', total = 0 } = route.params || {};
     const scaleAnim = useRef(new Animated.Value(0)).current;
+    const { colors, isDark } = useTheme();
 
     useEffect(() => {
         Animated.spring(scaleAnim, {
@@ -61,7 +63,7 @@ export default function OrderSuccessScreen({ route, navigation }) {
     }, []);
 
     return (
-        <SafeAreaView style={styles.container}>
+        <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
             {/* Confetti */}
             <View style={styles.confettiContainer} pointerEvents="none">
                 {CONFETTI.map((c, i) => <ConfettiDot key={i} {...c} />)}
@@ -73,13 +75,13 @@ export default function OrderSuccessScreen({ route, navigation }) {
                     <Ionicons name="checkmark" size={70} color={COLORS.white} />
                 </Animated.View>
 
-                <Text style={styles.title}>Order Placed!</Text>
+                <Text style={[styles.title, { color: colors.text }]}>Order Placed!</Text>
                 <Text style={styles.subtitle}>
                     Your order of ${total.toFixed(2)} has been placed successfully. You'll receive an email confirmation shortly.
                 </Text>
 
                 {/* Order ID */}
-                <View style={styles.orderIdBox}>
+                <View style={[styles.orderIdBox, { backgroundColor: isDark ? 'rgba(76, 175, 80, 0.1)' : COLORS.primaryLight }]}>
                     <Text style={styles.orderIdLabel}>Order ID</Text>
                     <Text style={styles.orderId}>{orderId}</Text>
                 </View>
@@ -88,7 +90,7 @@ export default function OrderSuccessScreen({ route, navigation }) {
                 <View style={styles.stepsRow}>
                     {['Confirmed', 'Processing', 'Shipping', 'Delivered'].map((step, i) => (
                         <View key={step} style={styles.stepItem}>
-                            <View style={[styles.stepDot, i === 0 && styles.stepDotActive]} />
+                            <View style={[styles.stepDot, { backgroundColor: colors.border }, i === 0 && styles.stepDotActive]} />
                             <Text style={[styles.stepLabel, i === 0 && styles.stepLabelActive]}>{step}</Text>
                         </View>
                     ))}
@@ -114,7 +116,7 @@ export default function OrderSuccessScreen({ route, navigation }) {
 }
 
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: COLORS.white },
+    container: { flex: 1 },
     confettiContainer: {
         position: 'absolute', top: 60, left: 0, right: 0, height: 80, overflow: 'hidden',
     },
@@ -129,14 +131,14 @@ const styles = StyleSheet.create({
     subtitle: { ...TYPOGRAPHY.body, textAlign: 'center', color: COLORS.textLight, lineHeight: 24, marginBottom: SPACING.xl },
     orderIdBox: {
         flexDirection: 'row', alignItems: 'center', gap: SPACING.sm,
-        backgroundColor: COLORS.primaryLight, paddingVertical: SPACING.sm, paddingHorizontal: SPACING.lg,
+        paddingVertical: SPACING.sm, paddingHorizontal: SPACING.lg,
         borderRadius: 20, marginBottom: SPACING.xxl,
     },
     orderIdLabel: { ...TYPOGRAPHY.bodySmall, color: COLORS.textLight },
     orderId: { ...TYPOGRAPHY.body, color: COLORS.primary, fontWeight: '700' },
     stepsRow: { flexDirection: 'row', gap: SPACING.md },
     stepItem: { alignItems: 'center', gap: 4 },
-    stepDot: { width: 12, height: 12, borderRadius: 6, backgroundColor: COLORS.border },
+    stepDot: { width: 12, height: 12, borderRadius: 6 },
     stepDotActive: { backgroundColor: COLORS.primary, width: 16, height: 16, borderRadius: 8 },
     stepLabel: { fontSize: 10, color: COLORS.textLight },
     stepLabelActive: { color: COLORS.primary, fontWeight: '600' },

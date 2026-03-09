@@ -3,7 +3,7 @@ import {
     View, Text, StyleSheet, Image, ScrollView,
     TouchableOpacity, FlatList
 } from 'react-native';
-import { COLORS, TYPOGRAPHY, SPACING } from '../constants/theme';
+import { COLORS, TYPOGRAPHY, SPACING, SHADOWS } from '../constants/theme';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { TRANSACTIONS } from '../constants/data';
@@ -129,11 +129,7 @@ const styles = StyleSheet.create({
         padding: 24,
         height: 180,
         justifyContent: 'space-between',
-        elevation: 10,
-        shadowColor: COLORS.primary,
-        shadowOpacity: 0.3,
-        shadowRadius: 15,
-        shadowOffset: { width: 0, height: 10 },
+        ...SHADOWS.large,
     },
     cardHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' },
     userName: { ...TYPOGRAPHY.body, color: COLORS.white, fontWeight: '700' },

@@ -1,64 +1,102 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
-import { COLORS, TYPOGRAPHY, SPACING } from '../constants/theme';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { COLORS, TYPOGRAPHY, SPACING, SHADOWS } from '../constants/theme';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import Button from '../components/Button';
-
-const ADDRESSES = [
-    { id: '1', name: 'Andrew Ainsley', address: '3456 Maple Drive', city: 'Springfield, IL 62704', country: 'USA', isDefault: true },
-    { id: '2', name: 'Andrew Ainsley', address: '789 Oak Street, Apt 4B', city: 'Chicago, IL 60601', country: 'USA', isDefault: false },
-    { id: '3', name: 'Andrew Ainsley', address: '12 Elm Court', city: 'Naperville, IL 60540', country: 'USA', isDefault: false },
-];
+import { db } from '../config/firebase';
+import { collection, query, getDocs } from 'firebase/firestore';
+import { useAuth } from '../contexts/AuthContext';
 
 export default function ShippingAddressScreen({ navigation }) {
-    const [selected, setSelected] = useState('1');
+    const { currentUser } = useAuth();
+    const [addresses, setAddresses] = useState([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        if (currentUser) {
+            fetchAddresses();
+        }
+    }, [currentUser]);
+
+    const fetchAddresses = async () => {
+        try {
+            const q = query(collection(db, 'users', currentUser.uid, 'addresses'));
+            const querySnapshot = await getDocs(q);
+            const addressList = querySnapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
+            }));
+            setAddresses(addressList);
+        } catch (error) {
+            console.error("Error fetching addresses:", error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleSelectAddress = (address) => {
+        // Navigate back to Checkout with the selected address
+        navigation.navigate('Checkout', { selectedAddress: address });
+    };
+
+    const renderItem = ({ item }) => (
+        <TouchableOpacity
+            style={styles.addressCard}
+            onPress={() => handleSelectAddress(item)}
+        >
+            <View style={styles.addressLeft}>
+                <View style={[styles.iconContainer, item.isDefault && styles.iconContainerActive]}>
+                    <Ionicons name="location" size={20} color={item.isDefault ? COLORS.white : COLORS.primary} />
+                </View>
+                <View style={styles.addressInfo}>
+                    <View style={styles.labelRow}>
+                        <Text style={styles.addressLabel}>{item.name || item.label}</Text>
+                        {item.isDefault && (
+                            <View style={styles.defaultBadge}>
+                                <Text style={styles.defaultText}>Default</Text>
+                            </View>
+                        )}
+                    </View>
+                    <Text style={styles.addressText}>{item.address || item.street}</Text>
+                </View>
+            </View>
+            <TouchableOpacity onPress={() => navigation.navigate('AddAddress', { addressId: item.id, initialData: item })}>
+                <Ionicons name="pencil-outline" size={20} color={COLORS.primary} />
+            </TouchableOpacity>
+        </TouchableOpacity>
+    );
 
     return (
         <SafeAreaView style={styles.container}>
             <View style={styles.header}>
                 <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-                    <Ionicons name="arrow-back" size={22} color={COLORS.text} />
+                    <Ionicons name="arrow-back" size={24} color={COLORS.text} />
                 </TouchableOpacity>
                 <Text style={styles.title}>Shipping Address</Text>
                 <View style={{ width: 40 }} />
             </View>
 
-            <FlatList
-                data={ADDRESSES}
-                keyExtractor={a => a.id}
-                contentContainerStyle={styles.list}
-                renderItem={({ item }) => (
-                    <TouchableOpacity
-                        style={[styles.card, selected === item.id && styles.cardSelected]}
-                        onPress={() => setSelected(item.id)}
-                    >
-                        <View style={styles.radioOuter}>
-                            {selected === item.id && <View style={styles.radioInner} />}
+            {loading ? (
+                <View style={styles.loadingContainer}>
+                    <ActivityIndicator size="large" color={COLORS.primary} />
+                </View>
+            ) : (
+                <FlatList
+                    data={addresses}
+                    keyExtractor={item => item.id}
+                    renderItem={renderItem}
+                    contentContainerStyle={styles.listContent}
+                    ListEmptyComponent={
+                        <View style={styles.emptyContainer}>
+                            <Text style={styles.emptyText}>No addresses found. Please add one.</Text>
                         </View>
-                        <View style={styles.cardContent}>
-                            <View style={styles.cardRow}>
-                                <Text style={styles.cardName}>{item.name}</Text>
-                                {item.isDefault && <View style={styles.defaultBadge}><Text style={styles.defaultText}>Default</Text></View>}
-                            </View>
-                            <Text style={styles.cardAddress}>{item.address}</Text>
-                            <Text style={styles.cardAddress}>{item.city}, {item.country}</Text>
-                        </View>
-                        <TouchableOpacity style={styles.editBtn}>
-                            <Ionicons name="pencil-outline" size={16} color={COLORS.primary} />
-                        </TouchableOpacity>
-                    </TouchableOpacity>
-                )}
-                ListFooterComponent={
-                    <TouchableOpacity style={styles.addNewBtn}>
-                        <Ionicons name="add-circle-outline" size={20} color={COLORS.primary} />
-                        <Text style={styles.addNewText}>Add New Address</Text>
-                    </TouchableOpacity>
-                }
-            />
+                    }
+                />
+            )}
 
             <View style={styles.footer}>
-                <Button title="Apply" onPress={() => navigation.goBack()} style={styles.applyBtn} />
+                <Button title="Add New Address" onPress={() => navigation.navigate('AddAddress')} />
             </View>
         </SafeAreaView>
     );
@@ -68,30 +106,37 @@ const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: COLORS.white },
     header: {
         flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-        paddingHorizontal: SPACING.lg, paddingTop: SPACING.md, paddingBottom: SPACING.md,
+        paddingHorizontal: SPACING.lg, paddingVertical: SPACING.md,
     },
-    backBtn: { width: 40, height: 40, borderRadius: 12, borderWidth: 1, borderColor: COLORS.border, alignItems: 'center', justifyContent: 'center' },
-    title: { ...TYPOGRAPHY.h2 },
-    list: { paddingHorizontal: SPACING.lg, paddingBottom: SPACING.xxl, gap: SPACING.md },
-    card: {
-        flexDirection: 'row', alignItems: 'flex-start', gap: SPACING.sm,
-        padding: SPACING.md, borderRadius: 16, borderWidth: 1.5, borderColor: COLORS.border,
+    backBtn: { padding: 4 },
+    title: { ...TYPOGRAPHY.h3 },
+    loadingContainer: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+    listContent: { padding: SPACING.lg, paddingBottom: 100 },
+    addressCard: {
+        flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+        backgroundColor: COLORS.white, borderRadius: 20, padding: SPACING.lg,
+        marginBottom: SPACING.md, ...SHADOWS.small,
+        borderWidth: 1, borderColor: COLORS.border,
     },
-    cardSelected: { borderColor: COLORS.primary, backgroundColor: COLORS.primaryLight + '20' },
-    radioOuter: {
-        width: 20, height: 20, borderRadius: 10, borderWidth: 2, borderColor: COLORS.primary,
-        alignItems: 'center', justifyContent: 'center', marginTop: 2,
+    addressLeft: { flexDirection: 'row', alignItems: 'center', flex: 1, gap: 16 },
+    iconContainer: {
+        width: 48, height: 48, borderRadius: 24,
+        backgroundColor: COLORS.primaryLight, alignItems: 'center', justifyContent: 'center',
     },
-    radioInner: { width: 10, height: 10, borderRadius: 5, backgroundColor: COLORS.primary },
-    cardContent: { flex: 1 },
-    cardRow: { flexDirection: 'row', alignItems: 'center', gap: SPACING.sm, marginBottom: 4 },
-    cardName: { ...TYPOGRAPHY.body, fontWeight: '700' },
-    defaultBadge: { backgroundColor: COLORS.primaryLight, paddingHorizontal: 8, paddingVertical: 2, borderRadius: 20 },
-    defaultText: { fontSize: 10, color: COLORS.primary, fontWeight: '600' },
-    cardAddress: { ...TYPOGRAPHY.bodySmall, color: COLORS.textLight, lineHeight: 20 },
-    editBtn: { padding: 4 },
-    addNewBtn: { flexDirection: 'row', alignItems: 'center', gap: SPACING.sm, paddingVertical: SPACING.md },
-    addNewText: { ...TYPOGRAPHY.body, color: COLORS.primary, fontWeight: '600' },
-    footer: { paddingHorizontal: SPACING.lg, paddingBottom: SPACING.xl },
-    applyBtn: { borderRadius: 30 },
+    iconContainerActive: { backgroundColor: COLORS.primary },
+    addressInfo: { flex: 1 },
+    labelRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 },
+    addressLabel: { ...TYPOGRAPHY.h3, fontSize: 16 },
+    defaultBadge: {
+        backgroundColor: COLORS.primary + '15', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 4,
+    },
+    defaultText: { ...TYPOGRAPHY.bodySmall, color: COLORS.primary, fontSize: 10, fontWeight: '700' },
+    addressText: { ...TYPOGRAPHY.bodySmall, color: COLORS.textLight, lineHeight: 18 },
+    emptyContainer: { alignItems: 'center', marginTop: 40 },
+    emptyText: { ...TYPOGRAPHY.body, color: COLORS.textLight },
+    footer: {
+        position: 'absolute', bottom: 0, left: 0, right: 0,
+        paddingHorizontal: SPACING.lg, paddingVertical: SPACING.xl,
+        backgroundColor: COLORS.white, borderTopWidth: 1, borderTopColor: COLORS.border,
+    },
 });

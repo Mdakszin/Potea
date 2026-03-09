@@ -52,3 +52,36 @@ export const SPACING = {
     xl: 32,
     xxl: 48
 };
+
+export const SHADOWS = {
+    small: {
+        shadowColor: "#000",
+        shadowOffset: {
+            width: 0,
+            height: 2,
+        },
+        shadowOpacity: 0.1,
+        shadowRadius: 3.84,
+        elevation: 2,
+    },
+    medium: {
+        shadowColor: "#000",
+        shadowOffset: {
+            width: 0,
+            height: 4,
+        },
+        shadowOpacity: 0.15,
+        shadowRadius: 5.46,
+        elevation: 5,
+    },
+    large: {
+        shadowColor: "#000",
+        shadowOffset: {
+            width: 0,
+            height: 10,
+        },
+        shadowOpacity: 0.2,
+        shadowRadius: 10,
+        elevation: 10,
+    }
+};

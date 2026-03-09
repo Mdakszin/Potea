@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Modal, ActivityIndicator } from 'react-native';
-import { COLORS, TYPOGRAPHY, SPACING } from '../constants/theme';
+import { COLORS, TYPOGRAPHY, SPACING, SHADOWS } from '../constants/theme';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Button from '../components/Button';
 import TextField from '../components/TextField';
@@ -140,7 +140,7 @@ const styles = StyleSheet.create({
         width: 70, height: 70, borderRadius: 35,
         alignItems: 'center', justifyContent: 'center',
         borderWidth: 4, borderColor: COLORS.white,
-        elevation: 10, shadowColor: COLORS.primary, shadowOpacity: 0.3, shadowRadius: 10, shadowOffset: { width: 0, height: 4 },
+        ...SHADOWS.large,
     },
     sectionLabel: { ...TYPOGRAPHY.body, color: COLORS.text, fontWeight: '500', marginBottom: SPACING.lg, marginTop: SPACING.md },
     input: { marginBottom: SPACING.lg },

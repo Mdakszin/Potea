@@ -1,19 +1,105 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     View, Text, StyleSheet, ScrollView,
-    Image, TouchableOpacity
+    Image, TouchableOpacity, ActivityIndicator
 } from 'react-native';
 import { COLORS, TYPOGRAPHY, SPACING } from '../constants/theme';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import Button from '../components/Button';
+import { db } from '../config/firebase';
+import { collection, query, where, getDocs, doc, setDoc, writeBatch, serverTimestamp } from 'firebase/firestore';
+import { useAuth } from '../contexts/AuthContext';
 
 const SHIPPING_FEE = 2.99;
 
 export default function CheckoutScreen({ route, navigation }) {
-    const { cart = [], subtotal = 0 } = route.params || {};
+    const { cart = [], subtotal = 0, selectedAddress: routeAddress, selectedShipping: routeShipping } = route.params || {};
+    const { currentUser } = useAuth();
+
+    const [selectedAddress, setSelectedAddress] = useState(routeAddress || null);
+    const [selectedShipping, setSelectedShipping] = useState(routeShipping || { id: '2', type: 'Regular', icon: 'bicycle-outline', price: 2.99, days: '3-5 days', arrival: 'Mar 10 – 12' });
     const [promoDiscount, setPromoDiscount] = useState(0);
-    const total = subtotal + SHIPPING_FEE - promoDiscount;
+    const [loading, setLoading] = useState(!routeAddress);
+    const [isPlacingOrder, setIsPlacingOrder] = useState(false);
+
+    const shippingFee = selectedShipping?.price || 0;
+    const total = subtotal + shippingFee - promoDiscount;
+
+    useEffect(() => {
+        if (!selectedAddress && currentUser) {
+            fetchDefaultAddress();
+        }
+    }, [currentUser, routeAddress]);
+
+    useEffect(() => {
+        if (routeShipping) {
+            setSelectedShipping(routeShipping);
+        }
+    }, [routeShipping]);
+
+    const fetchDefaultAddress = async () => {
+        try {
+            const q = query(
+                collection(db, 'users', currentUser.uid, 'addresses'),
+                where('isDefault', '==', true)
+            );
+            const querySnapshot = await getDocs(q);
+            if (!querySnapshot.empty) {
+                const doc = querySnapshot.docs[0];
+                setSelectedAddress({ id: doc.id, ...doc.data() });
+            }
+        } catch (error) {
+            console.error("Error fetching default address:", error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handlePlaceOrder = async () => {
+        if (!selectedAddress) {
+            alert("Please select a shipping address");
+            return;
+        }
+
+        setIsPlacingOrder(true);
+        try {
+            const orderId = `ORD-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+            const batch = writeBatch(db);
+
+            // 1. Create the order in /orders
+            const orderRef = doc(db, 'orders', orderId);
+            const orderData = {
+                orderId,
+                userId: currentUser.uid,
+                items: cart,
+                subtotal,
+                shippingFee,
+                promoDiscount,
+                total,
+                status: 'Processing',
+                shippingAddress: selectedAddress,
+                createdAt: serverTimestamp(),
+                updatedAt: serverTimestamp(),
+            };
+            batch.set(orderRef, orderData);
+
+            // 2. Clear user's cart
+            cart.forEach(item => {
+                const cartItemRef = doc(db, 'users', currentUser.uid, 'cart', item.id);
+                batch.delete(cartItemRef);
+            });
+
+            await batch.commit();
+
+            navigation.navigate('OrderSuccess', { orderId, total });
+        } catch (error) {
+            console.error("Error placing order:", error);
+            alert("Failed to place order. Please try again.");
+        } finally {
+            setIsPlacingOrder(false);
+        }
+    };
 
     return (
         <SafeAreaView style={styles.container}>
@@ -41,8 +127,18 @@ export default function CheckoutScreen({ route, navigation }) {
                             <Ionicons name="location" size={20} color={COLORS.primary} />
                         </View>
                         <View style={styles.addressInfo}>
-                            <Text style={styles.addressName}>Andrew Ainsley</Text>
-                            <Text style={styles.addressText}>3456 Maple Drive, Springfield, IL 62704, USA</Text>
+                            {loading ? (
+                                <ActivityIndicator size="small" color={COLORS.primary} style={{ alignSelf: 'flex-start' }} />
+                            ) : selectedAddress ? (
+                                <>
+                                    <Text style={styles.addressName}>{selectedAddress.name || selectedAddress.label}</Text>
+                                    <Text style={styles.addressText}>
+                                        {selectedAddress.address || selectedAddress.street}, {selectedAddress.city} {selectedAddress.zipCode}
+                                    </Text>
+                                </>
+                            ) : (
+                                <Text style={styles.addressText}>No address selected. Please add one.</Text>
+                            )}
                         </View>
                     </View>
                 </SectionCard>
@@ -75,13 +171,13 @@ export default function CheckoutScreen({ route, navigation }) {
                     </View>
                     <View style={styles.shippingOption}>
                         <View style={styles.shippingIconCircle}>
-                            <Ionicons name="bicycle-outline" size={22} color={COLORS.primary} />
+                            <Ionicons name={selectedShipping?.icon || "bicycle-outline"} size={22} color={COLORS.primary} />
                         </View>
                         <View style={{ flex: 1 }}>
-                            <Text style={styles.shippingName}>Regular  –  3-5 days</Text>
-                            <Text style={styles.shippingDate}>Est. arrival: Mar 10 – 12</Text>
+                            <Text style={styles.shippingName}>{selectedShipping?.type}  –  {selectedShipping?.days}</Text>
+                            <Text style={styles.shippingDate}>Est. arrival: {selectedShipping?.arrival}</Text>
                         </View>
-                        <Text style={styles.shippingPrice}>$2.99</Text>
+                        <Text style={styles.shippingPrice}>${selectedShipping?.price?.toFixed(2)}</Text>
                     </View>
                 </SectionCard>
 
@@ -122,7 +218,7 @@ export default function CheckoutScreen({ route, navigation }) {
                 <SectionCard>
                     <Text style={styles.sectionTitle}>Price Details</Text>
                     <PriceLine label="Subtotal" value={`$${subtotal.toFixed(2)}`} />
-                    <PriceLine label="Shipping" value={`$${SHIPPING_FEE.toFixed(2)}`} />
+                    <PriceLine label="Shipping" value={`$${shippingFee.toFixed(2)}`} />
                     {promoDiscount > 0 && <PriceLine label="Discount" value={`-$${promoDiscount.toFixed(2)}`} highlight />}
                     <View style={styles.totalDivider} />
                     <PriceLine label="Total" value={`$${total.toFixed(2)}`} bold />
@@ -135,8 +231,10 @@ export default function CheckoutScreen({ route, navigation }) {
             <View style={styles.footer}>
                 <Button
                     title={`Place Order  ($${total.toFixed(2)})`}
-                    onPress={() => navigation.navigate('OrderSuccess')}
+                    onPress={handlePlaceOrder}
                     style={styles.placeOrderBtn}
+                    isLoading={isPlacingOrder}
+                    disabled={cart.length === 0}
                 />
             </View>
         </SafeAreaView>

@@ -6,6 +6,7 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 
 // Auth Screens
+// Auth Screens
 import SplashScreen from './src/screens/SplashScreen';
 import WelcomeScreen from './src/screens/WelcomeScreen';
 import OnboardingScreen from './src/screens/OnboardingScreen';
@@ -18,8 +19,6 @@ import SetFingerprintScreen from './src/screens/SetFingerprintScreen';
 import ForgotPasswordScreen from './src/screens/ForgotPasswordScreen';
 import OTPVerificationScreen from './src/screens/OTPVerificationScreen';
 import CreateNewPasswordScreen from './src/screens/CreateNewPasswordScreen';
-
-// Main App Screens
 import MainTabNavigator from './src/navigation/MainTabNavigator';
 import ProductDetailScreen from './src/screens/ProductDetailScreen';
 import WishlistScreen from './src/screens/WishlistScreen';
@@ -33,7 +32,6 @@ import PaymentMethodScreen from './src/screens/PaymentMethodScreen';
 import OrderSuccessScreen from './src/screens/OrderSuccessScreen';
 import TrackOrderScreen from './src/screens/TrackOrderScreen';
 import LeaveReviewScreen from './src/screens/LeaveReviewScreen';
-
 // Wallet Screens
 import EWalletScreen from './src/screens/EWalletScreen';
 import TopUpWalletScreen from './src/screens/TopUpWalletScreen';
@@ -53,18 +51,15 @@ import PrivacyPolicyScreen from './src/screens/PrivacyPolicyScreen';
 import HelpCenterScreen from './src/screens/HelpCenterScreen';
 import CustomerServiceChatScreen from './src/screens/CustomerServiceChatScreen';
 import InviteFriendsScreen from './src/screens/InviteFriendsScreen';
-
 import { AuthProvider, useAuth } from './src/contexts/AuthContext';
-import { ActivityIndicator, View } from 'react-native';
+import { ActivityIndicator, View, Text } from 'react-native';
 import { COLORS } from './src/constants/theme';
+
 
 const Stack = createNativeStackNavigator();
 
 function RootNavigator() {
   const { currentUser } = useAuth();
-
-  // If you want a loading screen while auth state is resolving, 
-  // you'd check `loading` from useAuth() here.
 
   return (
     <Stack.Navigator

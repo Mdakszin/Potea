@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, Image, TouchableOpacity, Dimensions, Platform } from 'react-native';
-import { COLORS, TYPOGRAPHY, SPACING } from '../constants/theme';
+import { COLORS, TYPOGRAPHY, SPACING, SHADOWS } from '../constants/theme';
 import { Ionicons } from '@expo/vector-icons';
 
 export default function PlantCard({ item, onPress, onToggleFavorite, style }) {
@@ -59,10 +59,7 @@ const styles = StyleSheet.create({
         overflow: 'hidden',
         borderWidth: 1,
         borderColor: COLORS.border,
-        ...Platform.select({
-            web: { boxShadow: '0px 2px 8px rgba(0,0,0,0.06)' },
-            default: { shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 8, elevation: 3 }
-        }),
+        ...SHADOWS.small,
     },
     imageContainer: {
         width: '100%',
@@ -84,10 +81,7 @@ const styles = StyleSheet.create({
         height: 30,
         alignItems: 'center',
         justifyContent: 'center',
-        ...Platform.select({
-            web: { boxShadow: '0px 0px 4px rgba(0,0,0,0.1)' },
-            default: { shadowColor: '#000', shadowOpacity: 0.1, shadowRadius: 4, elevation: 2 }
-        }),
+        ...SHADOWS.small,
     },
     info: {
         padding: SPACING.sm,

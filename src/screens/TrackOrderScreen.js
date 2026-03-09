@@ -1,47 +1,60 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     View, Text, StyleSheet, TouchableOpacity,
-    ScrollView, Image
+    ScrollView, Image, ActivityIndicator
 } from 'react-native';
 import { COLORS, TYPOGRAPHY, SPACING } from '../constants/theme';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-
-const TRACKING_STEPS = [
-    {
-        title: 'Order In Transit - Dec 17',
-        time: '12:30 PM',
-        location: '32 Manchester Ave. Ringgold, GA 30736',
-        status: 'done',
-    },
-    {
-        title: 'Order .. Customs Port - Dec 16',
-        time: '11:40 PM',
-        location: '4 Evergreen Street, Lake Zurich, IL 60047',
-        status: 'done',
-    },
-    {
-        title: 'Orders are .. Shipped - Dec 15',
-        time: '11:30 AM',
-        location: '917 Hillcrest Street, Wheeling, WV 26003',
-        status: 'done',
-    },
-    {
-        title: 'Order is in Packing - Dec 15',
-        time: '10:25 AM',
-        location: '891 Glen Ridge St. Gainesville, VA 20155',
-        status: 'done',
-    },
-    {
-        title: 'Verified Payments - Dec 15',
-        time: '10:04 AM',
-        location: '55 Summerhouse Dr. Apopka, FL 32703',
-        status: 'done',
-    },
-];
+import { db } from '../config/firebase';
+import { doc, onSnapshot } from 'firebase/firestore';
 
 export default function TrackOrderScreen({ route, navigation }) {
-    const { order } = route.params;
+    const { order: initialOrder } = route.params;
+    const [order, setOrder] = useState(initialOrder);
+    const [loading, setLoading] = useState(false);
+
+    useEffect(() => {
+        if (!initialOrder?.id) return;
+
+        const unsubscribe = onSnapshot(doc(db, 'orders', initialOrder.id), (snapshot) => {
+            if (snapshot.exists()) {
+                setOrder({ id: snapshot.id, ...snapshot.data() });
+            }
+        });
+
+        return () => unsubscribe();
+    }, [initialOrder.id]);
+
+    const firstItem = order.items?.[0] || {};
+    const totalItems = order.items?.reduce((sum, i) => sum + i.qty, 0) || 0;
+
+    // Helper to format timestamps
+    const formatTime = (ts) => {
+        if (!ts) return '';
+        const date = ts.toDate ? ts.toDate() : new Date(ts);
+        return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    };
+
+    const formatDate = (ts) => {
+        if (!ts) return '';
+        const date = ts.toDate ? ts.toDate() : new Date(ts);
+        return date.toLocaleDateString([], { month: 'short', day: 'numeric' });
+    };
+
+    const getStatusIndex = (status) => {
+        const statuses = ['Processing', 'Packed', 'Shipping', 'Delivered'];
+        return statuses.indexOf(status);
+    };
+
+    const statusIdx = getStatusIndex(order.status);
+
+    const steps = [
+        { title: 'Order Placed', status: 'done', time: formatTime(order.createdAt), date: formatDate(order.createdAt), icon: 'receipt' },
+        { title: 'Processing', status: statusIdx >= 0 ? 'done' : 'pending', time: '', date: '', icon: 'cube' },
+        { title: 'Shipping', status: statusIdx >= 2 ? 'done' : 'pending', time: '', date: '', icon: 'bicycle' },
+        { title: 'Delivered', status: statusIdx >= 3 ? 'done' : 'pending', time: '', date: '', icon: 'checkmark-circle' },
+    ];
 
     return (
         <SafeAreaView style={styles.container}>
@@ -58,11 +71,11 @@ export default function TrackOrderScreen({ route, navigation }) {
             <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
                 {/* Order Summary Card */}
                 <View style={styles.orderSummaryCard}>
-                    <Image source={{ uri: order.plant.image }} style={styles.orderImage} />
+                    <Image source={{ uri: firstItem.image }} style={styles.orderImage} />
                     <View style={styles.orderInfo}>
-                        <Text style={styles.plantName}>{order.plant.name}</Text>
-                        <Text style={styles.orderQty}>Qty: {order.qty}</Text>
-                        <Text style={styles.orderPrice}>${order.price.toFixed(2)}</Text>
+                        <Text style={styles.plantName}>{firstItem.name} {order.items?.length > 1 ? `+ ${order.items.length - 1}` : ''}</Text>
+                        <Text style={styles.orderQty}>Total Items: {totalItems}</Text>
+                        <Text style={styles.orderPrice}>${order.total.toFixed(2)}</Text>
                     </View>
                 </View>
 
@@ -70,22 +83,22 @@ export default function TrackOrderScreen({ route, navigation }) {
                 <View style={styles.trackingVisualizer}>
                     <View style={styles.trackingIconRow}>
                         <View style={styles.iconCircleActive}>
-                            <Ionicons name="cube" size={24} color={COLORS.primary} />
+                            <Ionicons name="receipt" size={24} color={COLORS.primary} />
                         </View>
-                        <View style={styles.connectorActive} />
-                        <View style={styles.iconCircleActive}>
-                            <Ionicons name="bicycle" size={24} color={COLORS.primary} />
+                        <View style={statusIdx >= 0 ? styles.connectorActive : styles.connectorInactive} />
+                        <View style={statusIdx >= 0 ? styles.iconCircleActive : styles.iconCircleInactive}>
+                            <Ionicons name="cube" size={24} color={statusIdx >= 0 ? COLORS.primary : COLORS.textLight} />
                         </View>
-                        <View style={styles.connectorInactive} />
-                        <View style={styles.iconCircleInactive}>
-                            <Ionicons name="people" size={24} color={COLORS.textLight} />
+                        <View style={statusIdx >= 2 ? styles.connectorActive : styles.connectorInactive} />
+                        <View style={statusIdx >= 2 ? styles.iconCircleActive : styles.iconCircleInactive}>
+                            <Ionicons name="bicycle" size={24} color={statusIdx >= 2 ? COLORS.primary : COLORS.textLight} />
                         </View>
-                        <View style={styles.connectorInactive} />
-                        <View style={styles.iconCircleInactive}>
-                            <Ionicons name="checkmark-circle" size={24} color={COLORS.textLight} />
+                        <View style={statusIdx >= 3 ? styles.connectorActive : styles.connectorInactive} />
+                        <View style={statusIdx >= 3 ? styles.iconCircleActive : styles.iconCircleInactive}>
+                            <Ionicons name="checkmark-circle" size={24} color={statusIdx >= 3 ? COLORS.primary : COLORS.textLight} />
                         </View>
                     </View>
-                    <Text style={styles.trackingStatusText}>Packet In Delivery</Text>
+                    <Text style={styles.trackingStatusText}>{order.status}</Text>
                 </View>
 
                 {/* Status Details */}
@@ -94,18 +107,18 @@ export default function TrackOrderScreen({ route, navigation }) {
                 </View>
 
                 <View style={styles.timelineContainer}>
-                    {TRACKING_STEPS.map((step, index) => (
+                    {steps.map((step, index) => (
                         <View key={index} style={styles.timelineItem}>
                             <View style={styles.timelineLeft}>
-                                <View style={[styles.timelineDot, styles.dotDone]} />
-                                {index < TRACKING_STEPS.length - 1 && <View style={[styles.timelineLine, styles.lineDone]} />}
+                                <View style={[styles.timelineDot, step.status === 'done' && styles.dotDone]} />
+                                {index < steps.length - 1 && <View style={[styles.timelineLine, steps[index + 1].status === 'done' && styles.lineDone]} />}
                             </View>
                             <View style={styles.timelineContent}>
                                 <View style={styles.stepTitleRow}>
                                     <Text style={styles.stepTitle}>{step.title}</Text>
-                                    <Text style={styles.stepTime}>{step.time}</Text>
+                                    <Text style={styles.stepTime}>{step.time} {step.date}</Text>
                                 </View>
-                                <Text style={styles.stepLocation}>{step.location}</Text>
+                                {index === 0 && <Text style={styles.stepLocation}>{order.shippingAddress.address}, {order.shippingAddress.city}</Text>}
                             </View>
                         </View>
                     ))}

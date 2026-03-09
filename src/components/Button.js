@@ -1,6 +1,6 @@
 import React from 'react';
 import { TouchableOpacity, Text, StyleSheet, Platform } from 'react-native';
-import { COLORS, TYPOGRAPHY, SPACING } from '../constants/theme';
+import { COLORS, TYPOGRAPHY, SPACING, SHADOWS } from '../constants/theme';
 
 const Button = ({
     title,
@@ -50,18 +50,7 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         paddingHorizontal: SPACING.lg,
         width: '100%',
-        ...Platform.select({
-            web: {
-                boxShadow: `0px 4px 8px ${COLORS.primary}33`, // 33 is 20% opacity in hex
-            },
-            default: {
-                shadowColor: COLORS.primary,
-                shadowOffset: { width: 0, height: 4 },
-                shadowOpacity: 0.2,
-                shadowRadius: 8,
-                elevation: 5,
-            }
-        }),
+        ...SHADOWS.small,
     },
     text: {
         ...TYPOGRAPHY.button,

@@ -1,16 +1,74 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
-import { COLORS, TYPOGRAPHY, SPACING } from '../constants/theme';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, SafeAreaView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { db } from '../config/firebase';
+import { collection, addDoc, doc, updateDoc, query, where, getDocs, writeBatch } from 'firebase/firestore';
+import { useAuth } from '../contexts/AuthContext';
+import { COLORS, SPACING, TYPOGRAPHY } from '../constants/theme';
 import TextField from '../components/TextField';
-import Button from '../components/Button';
 import Checkbox from '../components/Checkbox';
+import Button from '../components/Button';
 
-export default function AddAddressScreen({ navigation }) {
-    const [name, setName] = useState('');
-    const [address, setAddress] = useState('');
-    const [isDefault, setIsDefault] = useState(false);
+export default function AddAddressScreen({ route, navigation }) {
+    const { addressId, initialData } = route.params || {};
+    const { currentUser } = useAuth();
+
+    const [name, setName] = useState(initialData?.name || '');
+    const [address, setAddress] = useState(initialData?.address || initialData?.street || '');
+    const [isDefault, setIsDefault] = useState(initialData?.isDefault || false);
+    const [loading, setLoading] = useState(false);
+
+    const handleSave = async () => {
+        if (!name || !address) {
+            alert('Please fill in all fields');
+            return;
+        }
+
+        setLoading(true);
+        try {
+            const addressData = {
+                name,
+                address,
+                isDefault,
+                updatedAt: new Date().toISOString(),
+            };
+
+            const addressesRef = collection(db, 'users', currentUser.uid, 'addresses');
+
+            // If setting as default, unset others first
+            if (isDefault) {
+                const q = query(addressesRef, where('isDefault', '==', true));
+                const querySnapshot = await getDocs(q);
+                const batch = writeBatch(db);
+                querySnapshot.forEach((document) => {
+                    if (document.id !== addressId) {
+                        batch.update(document.ref, { isDefault: false });
+                    }
+                });
+                await batch.commit();
+            }
+
+            if (addressId) {
+                // Update
+                const addrDoc = doc(db, 'users', currentUser.uid, 'addresses', addressId);
+                await updateDoc(addrDoc, addressData);
+            } else {
+                // Add
+                await addDoc(addressesRef, {
+                    ...addressData,
+                    createdAt: new Date().toISOString(),
+                });
+            }
+
+            navigation.goBack();
+        } catch (error) {
+            console.error("Error saving address:", error);
+            alert("Failed to save address. Please try again.");
+        } finally {
+            setLoading(false);
+        }
+    };
+
 
     return (
         <SafeAreaView style={styles.container}>
@@ -18,7 +76,7 @@ export default function AddAddressScreen({ navigation }) {
                 <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
                     <Ionicons name="arrow-back" size={24} color={COLORS.text} />
                 </TouchableOpacity>
-                <Text style={styles.title}>Add New Address</Text>
+                <Text style={styles.title}>{addressId ? 'Edit Address' : 'Add New Address'}</Text>
                 <View style={{ width: 40 }} />
             </View>
 
@@ -62,7 +120,11 @@ export default function AddAddressScreen({ navigation }) {
             </ScrollView>
 
             <View style={styles.footer}>
-                <Button title="Add" onPress={() => navigation.goBack()} />
+                <Button
+                    title={addressId ? "Update" : "Add"}
+                    onPress={handleSave}
+                    isLoading={loading}
+                />
             </View>
         </SafeAreaView>
     );

@@ -1,11 +1,25 @@
 import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Image } from 'react-native';
-import { COLORS, TYPOGRAPHY, SPACING } from '../constants/theme';
+import { COLORS, TYPOGRAPHY, SPACING, SHADOWS } from '../constants/theme';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 
 export default function EReceiptScreen({ route, navigation }) {
-    const { transaction } = route.params;
+    const { order, transaction: initialTransaction } = route.params || {};
+
+    // Normalize data
+    const data = order ? {
+        name: order.items[0]?.name || 'Potea Order',
+        icon: order.items[0]?.image,
+        amount: order.total,
+        date: order.createdAt?.toDate ? order.createdAt.toDate().toLocaleString() : new Date().toLocaleString(),
+        id: order.id,
+        type: 'Purchase',
+        items: order.items,
+        isOrder: true
+    } : initialTransaction;
+
+    if (!data) return <SafeAreaView style={styles.container}><Text>No Receipt Data</Text></SafeAreaView>;
 
     return (
         <SafeAreaView style={styles.container}>
@@ -23,30 +37,43 @@ export default function EReceiptScreen({ route, navigation }) {
                 {/* Barcode Placeholder */}
                 <View style={styles.barcodeContainer}>
                     <Ionicons name="barcode-outline" size={100} color={COLORS.text} />
-                    <Text style={styles.barcodeNum}>728362  637272</Text>
+                    <Text style={styles.barcodeNum}>{data.id?.substring(0, 6).toUpperCase()} {data.id?.substring(6, 12).toUpperCase()}</Text>
                 </View>
 
-                {/* Item Info */}
+                {/* Item(s) Info */}
                 <View style={styles.card}>
-                    <View style={styles.itemRow}>
-                        {transaction.isTopUp ? (
-                            <View style={styles.topUpIcon}>
-                                <Ionicons name="wallet-outline" size={24} color={COLORS.primary} />
+                    {data.isOrder ? (
+                        data.items.map((item, index) => (
+                            <View key={index} style={[styles.itemRow, index > 0 && { marginTop: 12 }]}>
+                                <Image source={{ uri: item.image }} style={styles.itemImage} />
+                                <View style={styles.itemTitleGroup}>
+                                    <Text style={styles.itemName}>{item.name}</Text>
+                                    <Text style={styles.itemQty}>Qty = {item.qty}</Text>
+                                </View>
+                                <Text style={styles.infoValue}>${(item.price * item.qty).toFixed(2)}</Text>
                             </View>
-                        ) : (
-                            <Image source={{ uri: transaction.icon }} style={styles.itemImage} />
-                        )}
-                        <View style={styles.itemTitleGroup}>
-                            <Text style={styles.itemName}>{transaction.name}</Text>
-                            <Text style={styles.itemQty}>Qty = 1</Text>
+                        ))
+                    ) : (
+                        <View style={styles.itemRow}>
+                            {data.isTopUp ? (
+                                <View style={styles.topUpIcon}>
+                                    <Ionicons name="wallet-outline" size={24} color={COLORS.primary} />
+                                </View>
+                            ) : (
+                                <Image source={{ uri: data.icon }} style={styles.itemImage} />
+                            )}
+                            <View style={styles.itemTitleGroup}>
+                                <Text style={styles.itemName}>{data.name}</Text>
+                                <Text style={styles.itemQty}>Qty = 1</Text>
+                            </View>
                         </View>
-                    </View>
+                    )}
 
                     <View style={styles.divider} />
 
                     <View style={styles.infoRow}>
                         <Text style={styles.infoLabel}>Amount</Text>
-                        <Text style={styles.infoValue}>${transaction.amount.toFixed(2)}</Text>
+                        <Text style={styles.infoValue}>${data.amount.toFixed(2)}</Text>
                     </View>
                     <View style={styles.infoRow}>
                         <Text style={styles.infoLabel}>Promo</Text>
@@ -54,23 +81,23 @@ export default function EReceiptScreen({ route, navigation }) {
                     </View>
                     <View style={[styles.infoRow, { marginTop: 8 }]}>
                         <Text style={styles.totalLabel}>Total</Text>
-                        <Text style={styles.totalValue}>${transaction.amount.toFixed(2)}</Text>
+                        <Text style={styles.totalValue}>${data.amount.toFixed(2)}</Text>
                     </View>
 
                     <View style={styles.divider} />
 
                     <View style={styles.infoRow}>
                         <Text style={styles.infoLabel}>Payment Methods</Text>
-                        <Text style={styles.infoValue}>My E-Wallet</Text>
+                        <Text style={styles.infoValue}>{data.isOrder ? 'Credit Card' : 'My E-Wallet'}</Text>
                     </View>
                     <View style={styles.infoRow}>
                         <Text style={styles.infoLabel}>Date</Text>
-                        <Text style={styles.infoValue}>{transaction.date === 'now' ? 'Dec 15, 2024 | 10:00 AM' : transaction.date}</Text>
+                        <Text style={styles.infoValue}>{data.date}</Text>
                     </View>
                     <View style={styles.infoRow}>
                         <Text style={styles.infoLabel}>Transaction ID</Text>
                         <View style={styles.idGroup}>
-                            <Text style={styles.infoValue}>SK7263727249</Text>
+                            <Text style={styles.infoValue}>{data.id}</Text>
                             <Ionicons name="copy-outline" size={14} color={COLORS.primary} />
                         </View>
                     </View>
@@ -86,7 +113,7 @@ export default function EReceiptScreen({ route, navigation }) {
                     <View style={styles.infoRow}>
                         <Text style={styles.infoLabel}>Category</Text>
                         <View style={styles.categoryBadge}>
-                            <Text style={styles.categoryText}>{transaction.type}</Text>
+                            <Text style={styles.categoryText}>{data.type}</Text>
                             <Ionicons name="chevron-down" size={14} color={COLORS.text} />
                         </View>
                     </View>
@@ -108,7 +135,7 @@ const styles = StyleSheet.create({
     barcodeNum: { ...TYPOGRAPHY.bodySmall, letterSpacing: 4, marginTop: 8 },
     card: {
         backgroundColor: COLORS.white, borderRadius: 24, padding: 24,
-        elevation: 4, shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 10, shadowOffset: { width: 0, height: 4 },
+        ...SHADOWS.medium,
         borderWidth: 1, borderColor: COLORS.border,
     },
     itemRow: { flexDirection: 'row', alignItems: 'center', gap: 16 },

@@ -3,7 +3,7 @@ import {
     View, Text, StyleSheet, Modal, TouchableOpacity,
     ScrollView, Dimensions
 } from 'react-native';
-import { COLORS, TYPOGRAPHY, SPACING } from '../constants/theme';
+import { COLORS, TYPOGRAPHY, SPACING, SHADOWS } from '../constants/theme';
 import { Ionicons } from '@expo/vector-icons';
 import Button from './Button';
 
@@ -220,11 +220,7 @@ const styles = StyleSheet.create({
         backgroundColor: COLORS.primary,
         borderWidth: 3,
         borderColor: COLORS.white,
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.2,
-        shadowRadius: 4,
-        elevation: 4,
+        ...SHADOWS.small,
     },
     priceLabels: {
         flexDirection: 'row',

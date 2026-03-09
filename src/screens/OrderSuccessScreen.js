@@ -1,6 +1,6 @@
 import React, { useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, Animated, Easing } from 'react-native';
-import { COLORS, TYPOGRAPHY, SPACING } from '../constants/theme';
+import { COLORS, TYPOGRAPHY, SPACING, SHADOWS } from '../constants/theme';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import Button from '../components/Button';
@@ -50,7 +50,8 @@ const CONFETTI = [
     { delay: 600, x: '90%', color: '#FFB800', size: 10 },
 ];
 
-export default function OrderSuccessScreen({ navigation }) {
+export default function OrderSuccessScreen({ route, navigation }) {
+    const { orderId = '#PTK-000000', total = 0 } = route.params || {};
     const scaleAnim = useRef(new Animated.Value(0)).current;
 
     useEffect(() => {
@@ -74,13 +75,13 @@ export default function OrderSuccessScreen({ navigation }) {
 
                 <Text style={styles.title}>Order Placed!</Text>
                 <Text style={styles.subtitle}>
-                    Your order has been placed successfully. You'll receive an email confirmation shortly.
+                    Your order of ${total.toFixed(2)} has been placed successfully. You'll receive an email confirmation shortly.
                 </Text>
 
                 {/* Order ID */}
                 <View style={styles.orderIdBox}>
                     <Text style={styles.orderIdLabel}>Order ID</Text>
-                    <Text style={styles.orderId}>#PTK-{Math.floor(100000 + Math.random() * 900000)}</Text>
+                    <Text style={styles.orderId}>{orderId}</Text>
                 </View>
 
                 {/* Step progress dots */}
@@ -122,7 +123,7 @@ const styles = StyleSheet.create({
         width: 140, height: 140, borderRadius: 70,
         backgroundColor: COLORS.primary, alignItems: 'center', justifyContent: 'center',
         marginBottom: SPACING.xl,
-        shadowColor: COLORS.primary, shadowOpacity: 0.4, shadowRadius: 20, elevation: 10,
+        ...SHADOWS.large,
     },
     title: { ...TYPOGRAPHY.h2, fontSize: 28, textAlign: 'center', marginBottom: SPACING.md },
     subtitle: { ...TYPOGRAPHY.body, textAlign: 'center', color: COLORS.textLight, lineHeight: 24, marginBottom: SPACING.xl },

@@ -12,54 +12,56 @@ const SHIPPING_OPTIONS = [
     { id: '4', type: 'Express', icon: 'flash-outline', days: '1–2 days', arrival: 'Mar 8–9', price: 9.99, company: 'ExpressGo' },
 ];
 
-export default function ChooseShippingScreen({ navigation }) {
-    const [selected, setSelected] = useState('2');
+const handleApply = () => {
+    const selectedOption = SHIPPING_OPTIONS.find(s => s.id === selected);
+    navigation.navigate('Checkout', { selectedShipping: selectedOption });
+};
 
-    return (
-        <SafeAreaView style={styles.container}>
-            <View style={styles.header}>
-                <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-                    <Ionicons name="arrow-back" size={22} color={COLORS.text} />
-                </TouchableOpacity>
-                <Text style={styles.title}>Choose Shipping</Text>
-                <View style={{ width: 40 }} />
-            </View>
+return (
+    <SafeAreaView style={styles.container}>
+        <View style={styles.header}>
+            <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
+                <Ionicons name="arrow-back" size={22} color={COLORS.text} />
+            </TouchableOpacity>
+            <Text style={styles.title}>Choose Shipping</Text>
+            <View style={{ width: 40 }} />
+        </View>
 
-            <FlatList
-                data={SHIPPING_OPTIONS}
-                keyExtractor={s => s.id}
-                contentContainerStyle={styles.list}
-                renderItem={({ item }) => {
-                    const isSelected = selected === item.id;
-                    return (
-                        <TouchableOpacity
-                            style={[styles.card, isSelected && styles.cardSelected]}
-                            onPress={() => setSelected(item.id)}
-                        >
-                            <View style={[styles.iconCircle, isSelected && styles.iconCircleActive]}>
-                                <Ionicons name={item.icon} size={24} color={isSelected ? COLORS.primary : COLORS.textLight} />
+        <FlatList
+            data={SHIPPING_OPTIONS}
+            keyExtractor={s => s.id}
+            contentContainerStyle={styles.list}
+            renderItem={({ item }) => {
+                const isSelected = selected === item.id;
+                return (
+                    <TouchableOpacity
+                        style={[styles.card, isSelected && styles.cardSelected]}
+                        onPress={() => setSelected(item.id)}
+                    >
+                        <View style={[styles.iconCircle, isSelected && styles.iconCircleActive]}>
+                            <Ionicons name={item.icon} size={24} color={isSelected ? COLORS.primary : COLORS.textLight} />
+                        </View>
+                        <View style={styles.cardInfo}>
+                            <Text style={styles.typeName}>{item.type}</Text>
+                            <Text style={styles.company}>{item.company}</Text>
+                            <Text style={styles.days}>{item.days}  ·  Est. {item.arrival}</Text>
+                        </View>
+                        <View style={styles.priceCol}>
+                            <Text style={styles.price}>${item.price.toFixed(2)}</Text>
+                            <View style={[styles.radioOuter, isSelected && styles.radioSelected]}>
+                                {isSelected && <View style={styles.radioInner} />}
                             </View>
-                            <View style={styles.cardInfo}>
-                                <Text style={styles.typeName}>{item.type}</Text>
-                                <Text style={styles.company}>{item.company}</Text>
-                                <Text style={styles.days}>{item.days}  ·  Est. {item.arrival}</Text>
-                            </View>
-                            <View style={styles.priceCol}>
-                                <Text style={styles.price}>${item.price.toFixed(2)}</Text>
-                                <View style={[styles.radioOuter, isSelected && styles.radioSelected]}>
-                                    {isSelected && <View style={styles.radioInner} />}
-                                </View>
-                            </View>
-                        </TouchableOpacity>
-                    );
-                }}
-            />
+                        </View>
+                    </TouchableOpacity>
+                );
+            }}
+        />
 
-            <View style={styles.footer}>
-                <Button title="Apply" onPress={() => navigation.goBack()} style={styles.applyBtn} />
-            </View>
-        </SafeAreaView>
-    );
+        <View style={styles.footer}>
+            <Button title="Apply" onPress={handleApply} style={styles.applyBtn} />
+        </View>
+    </SafeAreaView>
+);
 }
 
 const styles = StyleSheet.create({

@@ -1,30 +1,24 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     View, Text, StyleSheet, FlatList,
-    Image, TouchableOpacity, Alert
+    Image, TouchableOpacity, Alert, ActivityIndicator
 } from 'react-native';
 import { COLORS, TYPOGRAPHY, SPACING } from '../constants/theme';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import Button from '../components/Button';
-import { PLANTS } from '../constants/data';
-
+import { db } from '../config/firebase';
+import { collection, query, onSnapshot, doc, deleteDoc, updateDoc } from 'firebase/firestore';
+import { useAuth } from '../contexts/AuthContext';
 import LayoutContainer from '../components/LayoutContainer';
 
-// Seed cart with 2 sample items
-const INITIAL_CART = [
-    { ...PLANTS[0], cartId: '1', qty: 1, selectedSize: 'M' },
-    { ...PLANTS[1], cartId: '2', qty: 2, selectedSize: 'L' },
-    { ...PLANTS[4], cartId: '3', qty: 1, selectedSize: 'M' },
-];
-
 const EmptyCart = ({ navigation }) => (
-    <View style={empty.container}>
-        <View style={empty.iconBg}>
+    <View style={emptyStyles.container}>
+        <View style={emptyStyles.iconBg}>
             <Ionicons name="cart-outline" size={80} color={COLORS.primary} />
         </View>
-        <Text style={empty.title}>Your Cart is Empty!</Text>
-        <Text style={empty.subtitle}>Looks like you haven't added any plants yet. Start shopping now!</Text>
+        <Text style={emptyStyles.title}>Your Cart is Empty!</Text>
+        <Text style={emptyStyles.subtitle}>Looks like you haven't added any plants yet. Start shopping now!</Text>
         <Button
             title="Explore Plants"
             onPress={() => navigation.navigate('Explore')}
@@ -33,7 +27,7 @@ const EmptyCart = ({ navigation }) => (
     </View>
 );
 
-const empty = StyleSheet.create({
+const emptyStyles = StyleSheet.create({
     container: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: SPACING.xl },
     iconBg: {
         width: 120, height: 120, borderRadius: 60,
@@ -45,32 +39,81 @@ const empty = StyleSheet.create({
 });
 
 export default function CartScreen({ navigation }) {
-    const [cart, setCart] = useState(INITIAL_CART);
+    const { currentUser } = useAuth();
+    const [cart, setCart] = useState([]);
+    const [loading, setLoading] = useState(true);
 
-    const updateQty = (cartId, delta) => {
-        setCart(prev =>
-            prev.map(item =>
-                item.cartId === cartId
-                    ? { ...item, qty: Math.max(1, item.qty + delta) }
-                    : item
-            )
-        );
+    useEffect(() => {
+        if (!currentUser) return;
+
+        const q = collection(db, 'users', currentUser.uid, 'cart');
+        const unsubscribe = onSnapshot(q, (snapshot) => {
+            const list = snapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
+            }));
+            setCart(list);
+            setLoading(false);
+        }, (error) => {
+            console.error("Cart fetch error:", error);
+            setLoading(false);
+        });
+
+        return () => unsubscribe();
+    }, [currentUser]);
+
+    const updateQty = async (itemId, delta) => {
+        const item = cart.find(i => i.id === itemId);
+        if (!item) return;
+
+        const newQty = Math.max(1, item.qty + delta);
+        try {
+            const itemRef = doc(db, 'users', currentUser.uid, 'cart', itemId);
+            await updateDoc(itemRef, { qty: newQty });
+        } catch (error) {
+            console.error("Error updating quantity:", error);
+        }
     };
 
-    const removeItem = (cartId) => {
+    const removeItem = (itemId) => {
         Alert.alert('Remove', 'Remove this item from your cart?', [
             { text: 'Cancel', style: 'cancel' },
             {
                 text: 'Remove',
                 style: 'destructive',
-                onPress: () => setCart(prev => prev.filter(i => i.cartId !== cartId)),
+                onPress: async () => {
+                    try {
+                        const itemRef = doc(db, 'users', currentUser.uid, 'cart', itemId);
+                        await deleteDoc(itemRef);
+                    } catch (error) {
+                        console.error("Error removing item:", error);
+                    }
+                },
             },
         ]);
     };
 
     const subtotal = cart.reduce((sum, i) => sum + i.price * i.qty, 0);
 
-    if (cart.length === 0) return <SafeAreaView style={styles.container}><LayoutContainer><EmptyCart navigation={navigation} /></LayoutContainer></SafeAreaView>;
+    if (loading) {
+        return (
+            <SafeAreaView style={styles.container}>
+                <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+                    <ActivityIndicator size="large" color={COLORS.primary} />
+                </View>
+            </SafeAreaView>
+        );
+    }
+
+    if (cart.length === 0) {
+        return (
+            <SafeAreaView style={styles.container}>
+                <LayoutContainer>
+                    <EmptyCart navigation={navigation} />
+                </LayoutContainer>
+            </SafeAreaView>
+        );
+    }
 
     return (
         <SafeAreaView style={styles.container}>
@@ -86,7 +129,7 @@ export default function CartScreen({ navigation }) {
 
                 <FlatList
                     data={cart}
-                    keyExtractor={item => item.cartId}
+                    keyExtractor={item => item.id}
                     contentContainerStyle={styles.list}
                     ItemSeparatorComponent={() => <View style={styles.separator} />}
                     renderItem={({ item }) => (
@@ -98,15 +141,15 @@ export default function CartScreen({ navigation }) {
                                 <Text style={styles.itemPrice}>${(item.price * item.qty).toFixed(2)}</Text>
                             </View>
                             <View style={styles.qtyCol}>
-                                <TouchableOpacity style={styles.qtyBtn} onPress={() => removeItem(item.cartId)}>
+                                <TouchableOpacity style={styles.qtyBtn} onPress={() => removeItem(item.id)}>
                                     <Ionicons name="trash-outline" size={16} color="#FF4C4C" />
                                 </TouchableOpacity>
                                 <View style={styles.qtyControl}>
-                                    <TouchableOpacity style={styles.qtyStep} onPress={() => updateQty(item.cartId, -1)}>
+                                    <TouchableOpacity style={styles.qtyStep} onPress={() => updateQty(item.id, -1)}>
                                         <Ionicons name="remove" size={16} color={COLORS.text} />
                                     </TouchableOpacity>
                                     <Text style={styles.qtyText}>{item.qty}</Text>
-                                    <TouchableOpacity style={styles.qtyStep} onPress={() => updateQty(item.cartId, 1)}>
+                                    <TouchableOpacity style={styles.qtyStep} onPress={() => updateQty(item.id, 1)}>
                                         <Ionicons name="add" size={16} color={COLORS.text} />
                                     </TouchableOpacity>
                                 </View>

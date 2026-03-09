@@ -1,70 +1,23 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     View, Text, StyleSheet, TouchableOpacity,
-    FlatList, Image
+    FlatList, Image, ActivityIndicator
 } from 'react-native';
-import { COLORS, TYPOGRAPHY, SPACING } from '../constants/theme';
+import { COLORS, TYPOGRAPHY, SPACING, SHADOWS } from '../constants/theme';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { PLANTS } from '../constants/data';
+import { db } from '../config/firebase';
+import { collection, query, where, orderBy, onSnapshot } from 'firebase/firestore';
+import { useAuth } from '../contexts/AuthContext';
 
-// Mock data for orders
-const ACTIVE_ORDERS = [
-    {
-        id: '1',
-        plant: PLANTS[0],
-        qty: 1,
-        status: 'In Delivery',
-        price: 29.00,
-    },
-    {
-        id: '2',
-        plant: PLANTS[1],
-        qty: 3,
-        status: 'In Delivery',
-        price: 99.00,
-    },
-    {
-        id: '3',
-        plant: PLANTS[4],
-        qty: 2,
-        status: 'In Delivery',
-        price: 50.00,
-    },
-];
-
-const COMPLETED_ORDERS = [
-    {
-        id: '101',
-        plant: PLANTS[2],
-        qty: 2,
-        status: 'Completed',
-        price: 70.00,
-    },
-    {
-        id: '102',
-        plant: PLANTS[3],
-        qty: 4,
-        status: 'Completed',
-        price: 75.00,
-    },
-    {
-        id: '103',
-        plant: PLANTS[5],
-        qty: 1,
-        status: 'Completed',
-        price: 49.00,
-    },
-];
-
-const EmptyOrders = () => (
+const EmptyOrders = ({ activeTab }) => (
     <View style={emptyStyles.container}>
         <View style={emptyStyles.iconContainer}>
             <Ionicons name="document-text-outline" size={80} color={COLORS.primary} />
         </View>
-        <Text style={emptyStyles.title}>You don't have an order yet</Text>
+        <Text style={emptyStyles.title}>No {activeTab} orders yet</Text>
         <Text style={emptyStyles.subtitle}>
-            You don't have an active orders at this time
+            You don't have any {activeTab} orders at this time. Start shopping to see them here!
         </Text>
     </View>
 );
@@ -99,42 +52,85 @@ const emptyStyles = StyleSheet.create({
 });
 
 export default function MyOrdersScreen({ navigation }) {
+    const { currentUser } = useAuth();
     const [activeTab, setActiveTab] = useState('active');
+    const [orders, setOrders] = useState([]);
+    const [loading, setLoading] = useState(true);
 
-    const renderOrderItem = ({ item }) => (
-        <View style={styles.orderCard}>
-            <Image source={{ uri: item.plant.image }} style={styles.orderImage} />
-            <View style={styles.orderInfo}>
-                <Text style={styles.plantName}>{item.plant.name}</Text>
-                <Text style={styles.orderQty}>Qty: {item.qty}</Text>
-                <View style={styles.statusBadge}>
-                    <Text style={[styles.statusText, item.status === 'Completed' ? styles.statusCompleted : styles.statusActive]}>
-                        {item.status}
+    useEffect(() => {
+        if (!currentUser) return;
+
+        setLoading(true);
+        const q = query(
+            collection(db, 'orders'),
+            where('userId', '==', currentUser.uid),
+            orderBy('createdAt', 'desc')
+        );
+
+        const unsubscribe = onSnapshot(q, (snapshot) => {
+            const list = snapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
+            }));
+
+            // Filter by tab status
+            const filtered = list.filter(order => {
+                if (activeTab === 'active') {
+                    return order.status !== 'Completed' && order.status !== 'Cancelled';
+                } else {
+                    return order.status === 'Completed' || order.status === 'Cancelled';
+                }
+            });
+
+            setOrders(filtered);
+            setLoading(false);
+        }, (error) => {
+            console.error("Orders fetch error:", error);
+            setLoading(false);
+        });
+
+        return () => unsubscribe();
+    }, [currentUser, activeTab]);
+
+    const renderOrderItem = ({ item }) => {
+        const firstItem = item.items[0];
+        const totalItems = item.items.reduce((sum, i) => sum + i.qty, 0);
+
+        return (
+            <View style={styles.orderCard}>
+                <Image source={{ uri: firstItem.image }} style={styles.orderImage} />
+                <View style={styles.orderInfo}>
+                    <Text style={styles.plantName} numberOfLines={1}>
+                        {firstItem.name} {item.items.length > 1 ? `+ ${item.items.length - 1} more` : ''}
                     </Text>
-                </View>
-                <View style={styles.bottomRow}>
-                    <Text style={styles.orderPrice}>${item.price.toFixed(2)}</Text>
-                    {activeTab === 'active' ? (
-                        <TouchableOpacity
-                            style={styles.actionBtn}
-                            onPress={() => navigation.navigate('TrackOrder', { order: item })}
-                        >
-                            <Text style={styles.actionBtnText}>Track Order</Text>
-                        </TouchableOpacity>
-                    ) : (
-                        <TouchableOpacity
-                            style={styles.actionBtn}
-                            onPress={() => navigation.navigate('LeaveReview', { order: item })}
-                        >
-                            <Text style={styles.actionBtnText}>Leave a Review</Text>
-                        </TouchableOpacity>
-                    )}
+                    <Text style={styles.orderQty}>Total Items: {totalItems}</Text>
+                    <View style={styles.statusBadge}>
+                        <Text style={[styles.statusText, item.status === 'Completed' ? styles.statusCompleted : styles.statusActive]}>
+                            {item.status}
+                        </Text>
+                    </View>
+                    <View style={styles.bottomRow}>
+                        <Text style={styles.orderPrice}>${item.total.toFixed(2)}</Text>
+                        {activeTab === 'active' ? (
+                            <TouchableOpacity
+                                style={styles.actionBtn}
+                                onPress={() => navigation.navigate('TrackOrder', { order: item })}
+                            >
+                                <Text style={styles.actionBtnText}>Track Order</Text>
+                            </TouchableOpacity>
+                        ) : (
+                            <TouchableOpacity
+                                style={styles.actionBtn}
+                                onPress={() => navigation.navigate('LeaveReview', { order: item })}
+                            >
+                                <Text style={styles.actionBtnText}>Re-order</Text>
+                            </TouchableOpacity>
+                        )}
+                    </View>
                 </View>
             </View>
-        </View>
-    );
-
-    const orders = activeTab === 'active' ? ACTIVE_ORDERS : COMPLETED_ORDERS;
+        );
+    };
 
     return (
         <SafeAreaView style={styles.container}>
@@ -168,8 +164,12 @@ export default function MyOrdersScreen({ navigation }) {
                 </TouchableOpacity>
             </View>
 
-            {orders.length === 0 ? (
-                <EmptyOrders />
+            {loading ? (
+                <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+                    <ActivityIndicator size="large" color={COLORS.primary} />
+                </View>
+            ) : orders.length === 0 ? (
+                <EmptyOrders activeTab={activeTab} />
             ) : (
                 <FlatList
                     data={orders}
@@ -244,13 +244,7 @@ const styles = StyleSheet.create({
         borderRadius: 24,
         padding: SPACING.md,
         marginBottom: SPACING.lg,
-        // Shadow for iOS
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.1,
-        shadowRadius: 10,
-        // Elevation for Android
-        elevation: 4,
+        ...SHADOWS.small,
     },
     orderImage: {
         width: 100,

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
-import { COLORS, TYPOGRAPHY, SPACING } from '../constants/theme';
+import { COLORS, TYPOGRAPHY, SPACING, SHADOWS } from '../constants/theme';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import Button from '../components/Button';
@@ -75,8 +75,7 @@ const styles = StyleSheet.create({
     addressCard: {
         flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
         backgroundColor: COLORS.white, borderRadius: 20, padding: SPACING.lg,
-        marginBottom: SPACING.md, elevation: 2, shadowColor: '#000',
-        shadowOpacity: 0.05, shadowRadius: 10, shadowOffset: { width: 0, height: 4 },
+        marginBottom: SPACING.md, ...SHADOWS.small,
         borderWidth: 1, borderColor: COLORS.border,
     },
     addressLeft: { flexDirection: 'row', alignItems: 'center', flex: 1, gap: 16 },

@@ -42,7 +42,7 @@ export default function ProfileScreen({ navigation }) {
     return (
         <SafeAreaView style={styles.container}>
             <LayoutContainer>
-                <ScrollView>
+                <ScrollView contentContainerStyle={{ paddingBottom: 100 }}>
                     <View style={styles.header}>
                         <Text style={styles.title}>My Profile</Text>
                     </View>

@@ -1,69 +1,276 @@
-import React from 'react';
-import { View, Text, StyleSheet, ImageBackground } from 'react-native';
+import React, { useEffect, useRef } from 'react';
+import { View, Text, StyleSheet, Animated, Dimensions, TouchableOpacity, Platform } from 'react-native';
 import { COLORS, TYPOGRAPHY, SPACING } from '../constants/theme';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
+
+const { width, height } = Dimensions.get('window');
 
 export default function WelcomeScreen({ navigation }) {
-    return (
-        <ImageBackground
-            source={{ uri: 'https://images.unsplash.com/photo-1497250681554-fc1da9915eb9?ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&ixlib=rb-1.2.1&auto=format&fit=crop&w=1950&q=80' }} // Placeholder plant image
-            style={styles.backgroundImage}
-            resizeMode="cover"
-        >
-            <View style={styles.overlay}>
-                <SafeAreaView style={styles.container}>
-                    <View style={styles.bottomContent}>
-                        <Text style={styles.welcomeText}>Welcome to</Text>
-                        <Text style={styles.brandText}>Potea</Text>
-                        <Text style={styles.subtitleText}>
-                            The best plant e-commerce & online store app of the century for your needs!
-                        </Text>
+    const fadeAnim = useRef(new Animated.Value(0)).current;
+    const slideAnim = useRef(new Animated.Value(40)).current;
+    const logoScale = useRef(new Animated.Value(0.7)).current;
+    const pulseAnim = useRef(new Animated.Value(1)).current;
 
-                        {/* The actual design probably has a delayed transition, or we add a button if needed */}
-                        <View style={{ marginTop: 20 }}>
-                            <Text style={{ color: COLORS.white, textAlign: 'center' }} onPress={() => navigation.navigate('Onboarding')}>Tap to continue...</Text>
-                        </View>
+    useEffect(() => {
+        // Staggered entrance animations
+        Animated.sequence([
+            Animated.parallel([
+                Animated.timing(logoScale, {
+                    toValue: 1,
+                    duration: 800,
+                    useNativeDriver: true,
+                }),
+                Animated.timing(fadeAnim, {
+                    toValue: 1,
+                    duration: 1000,
+                    useNativeDriver: true,
+                }),
+            ]),
+            Animated.timing(slideAnim, {
+                toValue: 0,
+                duration: 600,
+                useNativeDriver: true,
+            }),
+        ]).start();
+
+        // Pulse animation for the CTA
+        Animated.loop(
+            Animated.sequence([
+                Animated.timing(pulseAnim, {
+                    toValue: 1.05,
+                    duration: 1200,
+                    useNativeDriver: true,
+                }),
+                Animated.timing(pulseAnim, {
+                    toValue: 1,
+                    duration: 1200,
+                    useNativeDriver: true,
+                }),
+            ])
+        ).start();
+    }, []);
+
+    return (
+        <View style={styles.container}>
+            {/* Decorative circles */}
+            <View style={styles.circle1} />
+            <View style={styles.circle2} />
+            <View style={styles.circle3} />
+
+            <SafeAreaView style={styles.safeArea}>
+                {/* Top section - Logo */}
+                <Animated.View style={[styles.topSection, { opacity: fadeAnim, transform: [{ scale: logoScale }] }]}>
+                    <View style={styles.logoCircle}>
+                        <Ionicons name="leaf" size={36} color="#FFFFFF" />
                     </View>
-                </SafeAreaView>
-            </View>
-        </ImageBackground>
+                </Animated.View>
+
+                {/* Middle section - Hero content */}
+                <View style={styles.middleSection}>
+                    <Animated.View style={{ opacity: fadeAnim, transform: [{ scale: logoScale }] }}>
+                        <Text style={styles.welcomeLabel}>WELCOME TO</Text>
+                        <Text style={styles.brandName}>Potea</Text>
+                        <View style={styles.taglineContainer}>
+                            <View style={styles.taglineLine} />
+                            <Text style={styles.tagline}>Premium Plant Store</Text>
+                            <View style={styles.taglineLine} />
+                        </View>
+                    </Animated.View>
+                </View>
+
+                {/* Bottom section - CTA */}
+                <Animated.View style={[styles.bottomSection, { opacity: fadeAnim, transform: [{ translateY: slideAnim }] }]}>
+                    <Text style={styles.description}>
+                        Discover the finest collection of indoor & outdoor plants.
+                        Transform your space into a green paradise.
+                    </Text>
+
+                    <Animated.View style={{ transform: [{ scale: pulseAnim }], width: '100%' }}>
+                        <TouchableOpacity
+                            style={styles.ctaButton}
+                            onPress={() => navigation.navigate('Onboarding')}
+                            activeOpacity={0.85}
+                        >
+                            <Text style={styles.ctaText}>Get Started</Text>
+                            <View style={styles.ctaIconCircle}>
+                                <Ionicons name="arrow-forward" size={20} color={COLORS.primary} />
+                            </View>
+                        </TouchableOpacity>
+                    </Animated.View>
+
+                    <View style={styles.footer}>
+                        <View style={styles.dotRow}>
+                            <View style={[styles.dot, styles.dotActive]} />
+                            <View style={styles.dot} />
+                            <View style={styles.dot} />
+                        </View>
+                        <Text style={styles.footerText}>v1.0 · Potea Inc.</Text>
+                    </View>
+                </Animated.View>
+            </SafeAreaView>
+        </View>
     );
 }
 
 const styles = StyleSheet.create({
-    backgroundImage: {
-        flex: 1,
-        width: '100%',
-        height: '100%',
-    },
-    overlay: {
-        flex: 1,
-        backgroundColor: 'rgba(0,0,0,0.3)', // Dark overlay to make text readable
-        justifyContent: 'flex-end',
-    },
     container: {
         flex: 1,
-        justifyContent: 'flex-end',
-        padding: SPACING.lg,
+        backgroundColor: '#0D2B0D',
     },
-    bottomContent: {
+    safeArea: {
+        flex: 1,
+        justifyContent: 'space-between',
+        paddingHorizontal: SPACING.lg,
+        paddingBottom: Platform.OS === 'web' ? SPACING.xl : SPACING.sm,
+    },
+
+    // Decorative circles
+    circle1: {
+        position: 'absolute',
+        width: 300,
+        height: 300,
+        borderRadius: 150,
+        backgroundColor: 'rgba(1, 183, 99, 0.06)',
+        top: -80,
+        right: -100,
+    },
+    circle2: {
+        position: 'absolute',
+        width: 200,
+        height: 200,
+        borderRadius: 100,
+        backgroundColor: 'rgba(1, 183, 99, 0.04)',
+        bottom: 100,
+        left: -60,
+    },
+    circle3: {
+        position: 'absolute',
+        width: 140,
+        height: 140,
+        borderRadius: 70,
+        backgroundColor: 'rgba(1, 183, 99, 0.08)',
+        top: '40%',
+        right: 30,
+    },
+
+    // Top
+    topSection: {
+        alignItems: 'center',
+        paddingTop: SPACING.xxl,
+    },
+    logoCircle: {
+        width: 72,
+        height: 72,
+        borderRadius: 36,
+        backgroundColor: 'rgba(1, 183, 99, 0.2)',
+        borderWidth: 2,
+        borderColor: 'rgba(1, 183, 99, 0.4)',
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+
+    // Middle - Hero
+    middleSection: {
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    welcomeLabel: {
+        fontSize: 14,
+        fontWeight: '700',
+        letterSpacing: 6,
+        color: 'rgba(1, 183, 99, 0.7)',
+        textAlign: 'center',
+        marginBottom: SPACING.sm,
+    },
+    brandName: {
+        fontSize: 72,
+        fontWeight: '800',
+        color: '#FFFFFF',
+        textAlign: 'center',
+        letterSpacing: -1,
+    },
+    taglineContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginTop: SPACING.md,
+        gap: SPACING.md,
+    },
+    taglineLine: {
+        width: 32,
+        height: 1,
+        backgroundColor: 'rgba(1, 183, 99, 0.4)',
+    },
+    tagline: {
+        fontSize: 14,
+        fontWeight: '500',
+        color: 'rgba(255, 255, 255, 0.6)',
+        letterSpacing: 2,
+        textTransform: 'uppercase',
+    },
+
+    // Bottom
+    bottomSection: {
+        alignItems: 'center',
+        paddingBottom: SPACING.lg,
+    },
+    description: {
+        fontSize: 16,
+        color: 'rgba(255, 255, 255, 0.55)',
+        textAlign: 'center',
+        lineHeight: 26,
         marginBottom: SPACING.xl,
+        maxWidth: 340,
     },
-    welcomeText: {
-        ...TYPOGRAPHY.h1,
-        color: COLORS.white,
-        marginBottom: SPACING.xs,
+    ctaButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: COLORS.primary,
+        height: 60,
+        borderRadius: 30,
+        paddingHorizontal: SPACING.lg,
+        width: '100%',
+        maxWidth: 360,
+        alignSelf: 'center',
+        gap: SPACING.sm,
     },
-    brandText: {
-        ...TYPOGRAPHY.h1,
-        color: COLORS.primary,
-        fontSize: 48, // Make it very large as per design
-        marginBottom: SPACING.md,
+    ctaText: {
+        fontSize: 18,
+        fontWeight: '700',
+        color: '#FFFFFF',
     },
-    subtitleText: {
-        ...TYPOGRAPHY.body,
-        color: COLORS.white,
-        opacity: 0.9,
-        lineHeight: 24,
-    }
+    ctaIconCircle: {
+        width: 32,
+        height: 32,
+        borderRadius: 16,
+        backgroundColor: 'rgba(255, 255, 255, 0.2)',
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    footer: {
+        alignItems: 'center',
+        marginTop: SPACING.xl,
+        gap: SPACING.sm,
+    },
+    dotRow: {
+        flexDirection: 'row',
+        gap: 6,
+    },
+    dot: {
+        width: 6,
+        height: 6,
+        borderRadius: 3,
+        backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    },
+    dotActive: {
+        backgroundColor: COLORS.primary,
+        width: 20,
+    },
+    footerText: {
+        fontSize: 12,
+        color: 'rgba(255, 255, 255, 0.25)',
+        letterSpacing: 1,
+    },
 });

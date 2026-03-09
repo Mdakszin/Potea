@@ -5,9 +5,11 @@ import {
     signInWithEmailAndPassword,
     signOut,
     onAuthStateChanged,
-    updateProfile
+    updateProfile,
+    GoogleAuthProvider,
+    signInWithPopup
 } from 'firebase/auth';
-import { doc, setDoc, getDoc } from 'firebase/firestore';
+import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
 
 const AuthContext = createContext();
 
@@ -50,13 +52,41 @@ export function AuthProvider({ children }) {
         return signInWithEmailAndPassword(auth, email, password);
     }
 
+    async function loginWithGoogle() {
+        try {
+            const provider = new GoogleAuthProvider();
+            const result = await signInWithPopup(auth, provider);
+            const user = result.user;
+
+            // Create or merge user document in Firestore
+            const userRef = doc(db, 'users', user.uid);
+            const docSnap = await getDoc(userRef);
+
+            if (!docSnap.exists()) {
+                await setDoc(userRef, {
+                    uid: user.uid,
+                    email: user.email,
+                    name: user.displayName || '',
+                    avatar: user.photoURL || null,
+                    phone: user.phoneNumber || '',
+                    dob: '',
+                    createdAt: new Date().toISOString(),
+                });
+            }
+
+            return user;
+        } catch (error) {
+            console.error('Google Sign-In error:', error);
+            throw error;
+        }
+    }
+
     function logout() {
         return signOut(auth);
     }
 
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, async (user) => {
-            console.log("DEBUG: onAuthStateChanged fired, user:", user ? user.uid : "null");
             setCurrentUser(user);
 
             if (user) {
@@ -86,6 +116,7 @@ export function AuthProvider({ children }) {
         userData,
         register,
         login,
+        loginWithGoogle,
         logout,
         setUserData
     };

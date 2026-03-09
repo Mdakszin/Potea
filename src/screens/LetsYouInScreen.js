@@ -1,11 +1,28 @@
-import React from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity } from 'react-native';
+import React, { useState } from 'react';
+import { View, Text, StyleSheet, Image, TouchableOpacity, Alert } from 'react-native';
 import { COLORS, TYPOGRAPHY, SPACING } from '../constants/theme';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import Button from '../components/Button';
 import { Ionicons } from '@expo/vector-icons';
+import { useAuth } from '../contexts/AuthContext';
+
+const googleLogo = require('../../assets/google-logo.png');
 
 export default function LetsYouInScreen({ navigation }) {
+    const { loginWithGoogle } = useAuth();
+    const [googleLoading, setGoogleLoading] = useState(false);
+
+    const handleGoogleSignIn = async () => {
+        try {
+            setGoogleLoading(true);
+            await loginWithGoogle();
+        } catch (err) {
+            Alert.alert('Google Sign-In Failed', err.message || 'Please try again.');
+        } finally {
+            setGoogleLoading(false);
+        }
+    };
+
     return (
         <SafeAreaView style={styles.container}>
             <View style={styles.header}>
@@ -28,9 +45,11 @@ export default function LetsYouInScreen({ navigation }) {
                 <View style={styles.socialButtonsContainer}>
                     <Button
                         variant="social"
-                        title="Continue with Google"
+                        title={googleLoading ? "Signing in..." : "Continue with Google"}
                         style={styles.socialButton}
-                        icon={<Image source={{ uri: 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/53/Google_%22G%22_Logo.svg/512px-Google_%22G%22_Logo.svg.png' }} style={{ width: 24, height: 24 }} />}
+                        onPress={handleGoogleSignIn}
+                        disabled={googleLoading}
+                        icon={<Image source={googleLogo} style={{ width: 24, height: 24 }} />}
                     />
                 </View>
 

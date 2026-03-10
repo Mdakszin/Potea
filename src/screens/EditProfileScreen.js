@@ -9,14 +9,17 @@ import { Ionicons } from '@expo/vector-icons';
 import TextField from '../components/TextField';
 import Button from '../components/Button';
 import { useAuth } from '../contexts/AuthContext';
-import { db } from '../config/firebase';
+import { db, storage } from '../config/firebase';
 import { doc, updateDoc } from 'firebase/firestore';
+import { ref, uploadString, getDownloadURL } from 'firebase/storage';
 import * as ImagePicker from 'expo-image-picker';
 import * as FileSystem from 'expo-file-system';
 import * as ImageManipulator from 'expo-image-manipulator';
+import { useTheme } from '../contexts/ThemeContext';
 
 export default function EditProfileScreen({ navigation }) {
     const { currentUser, userData, setUserData } = useAuth();
+    const { colors, isDark } = useTheme();
 
     const [name, setName] = useState(userData?.name || '');
     const [nickname, setNickname] = useState(userData?.nickname || '');
@@ -43,7 +46,6 @@ export default function EditProfileScreen({ navigation }) {
     }, [userData]);
 
     const handlePickAvatar = async () => {
-        // Request permission
         if (Platform.OS !== 'web') {
             const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
             if (status !== 'granted') {
@@ -56,26 +58,24 @@ export default function EditProfileScreen({ navigation }) {
             mediaTypes: 'images',
             allowsEditing: true,
             aspect: [1, 1],
-            quality: 0.5,
+            quality: 0.8,
         });
 
         if (!result.canceled && result.assets.length > 0) {
             const pickedUri = result.assets[0].uri;
-            await processAvatar(pickedUri);
+            await uploadAvatarToStorage(pickedUri);
         }
     };
 
-    const processAvatar = async (localUri) => {
+    const uploadAvatarToStorage = async (localUri) => {
         if (!currentUser) return;
 
         try {
             setUploadingAvatar(true);
 
-            // Resize image to ensure Base64 string stays under Firestore 1MB limit
-            // A 400x400 image is sufficient for a profile picture
             const manipulatedImage = await ImageManipulator.manipulateAsync(
                 localUri,
-                [{ resize: { width: 400, height: 400 } }],
+                [{ resize: { width: 500, height: 500 } }],
                 { compress: 0.7, format: ImageManipulator.SaveFormat.JPEG }
             );
 
@@ -85,9 +85,10 @@ export default function EditProfileScreen({ navigation }) {
             if (Platform.OS === 'web') {
                 const response = await fetch(resizeUri);
                 const blob = await response.blob();
-                base64Data = await new Promise((resolve) => {
+                base64Data = await new Promise((resolve, reject) => {
                     const reader = new FileReader();
                     reader.onloadend = () => resolve(reader.result);
+                    reader.onerror = reject;
                     reader.readAsDataURL(blob);
                 });
             } else {
@@ -97,26 +98,25 @@ export default function EditProfileScreen({ navigation }) {
                 base64Data = `data:image/jpeg;base64,${base64}`;
             }
 
-            // Save Base64 directly to Firestore (Fallback for when Storage is unavailable)
-            const userRef = doc(db, 'users', currentUser.uid);
-            await updateDoc(userRef, { avatar: base64Data });
+            const storageRef = ref(storage, `avatars/${currentUser.uid}.jpg`);
+            await uploadString(storageRef, base64Data, 'data_url');
 
-            // Update local state and context
-            setAvatarUri(base64Data);
+            const downloadURL = await getDownloadURL(storageRef);
+
+            const userRef = doc(db, 'users', currentUser.uid);
+            await updateDoc(userRef, { avatar: downloadURL });
+
+            setAvatarUri(downloadURL);
             if (setUserData) {
-                setUserData({ ...userData, avatar: base64Data });
+                setUserData({ ...userData, avatar: downloadURL });
             }
 
+            setUploadingAvatar(false);
             Alert.alert('Success', 'Profile photo updated!');
+
         } catch (error) {
             console.error('Avatar processing failed:', error);
-            // Check if it's a Firestore size limit error
-            if (error.message?.includes('payload size exceeds')) {
-                Alert.alert('Error', 'The photo is too large. Please try a different or smaller image.');
-            } else {
-                Alert.alert('Update Failed', 'Could not save your photo. Please try again.');
-            }
-        } finally {
+            Alert.alert('Update Failed', 'Could not process your photo. Please try again.');
             setUploadingAvatar(false);
         }
     };
@@ -153,15 +153,15 @@ export default function EditProfileScreen({ navigation }) {
     };
 
     const resolvedAvatar = avatarUri
-        || `https://ui-avatars.com/api/?name=${encodeURIComponent(name || 'User')}&background=4CAF50&color=fff&size=200`;
+        || `https://ui-avatars.com/api/?name=${encodeURIComponent(name || 'User')}&background=${isDark ? '1F222A' : '4CAF50'}&color=fff&size=200`;
 
     return (
-        <SafeAreaView style={styles.container}>
+        <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
             <View style={styles.header}>
                 <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-                    <Ionicons name="arrow-back" size={24} color={COLORS.text} />
+                    <Ionicons name="arrow-back" size={24} color={colors.text} />
                 </TouchableOpacity>
-                <Text style={styles.title}>Edit Profile</Text>
+                <Text style={[styles.title, { color: colors.text }]}>Edit Profile</Text>
                 <View style={{ width: 40 }} />
             </View>
 
@@ -169,7 +169,7 @@ export default function EditProfileScreen({ navigation }) {
                 <View style={styles.avatarSection}>
                     <TouchableOpacity style={styles.avatarWrapper} onPress={handlePickAvatar} disabled={uploadingAvatar}>
                         <Image source={{ uri: resolvedAvatar }} style={styles.avatar} />
-                        <View style={styles.editBadge}>
+                        <View style={[styles.editBadge, { borderColor: colors.background }]}>
                             {uploadingAvatar
                                 ? <ActivityIndicator size="small" color={COLORS.white} />
                                 : <Ionicons name="camera" size={16} color={COLORS.white} />
@@ -217,7 +217,7 @@ export default function EditProfileScreen({ navigation }) {
                 </View>
             </ScrollView>
 
-            <View style={styles.footer}>
+            <View style={[styles.footer, { backgroundColor: colors.background, borderTopColor: colors.border }]}>
                 <Button
                     title={loading ? "Updating..." : "Update"}
                     onPress={handleUpdate}
@@ -229,7 +229,7 @@ export default function EditProfileScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: COLORS.white },
+    container: { flex: 1 },
     header: {
         flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
         paddingHorizontal: SPACING.lg, paddingVertical: SPACING.md,
@@ -243,7 +243,7 @@ const styles = StyleSheet.create({
     editBadge: {
         position: 'absolute', bottom: 4, right: 4,
         backgroundColor: COLORS.primary, width: 32, height: 32, borderRadius: 10,
-        alignItems: 'center', justifyContent: 'center', borderWidth: 3, borderColor: COLORS.white,
+        alignItems: 'center', justifyContent: 'center', borderWidth: 3,
     },
     avatarHint: {
         ...TYPOGRAPHY.bodySmall,
@@ -254,6 +254,6 @@ const styles = StyleSheet.create({
     footer: {
         position: 'absolute', bottom: 0, left: 0, right: 0,
         paddingHorizontal: SPACING.lg, paddingVertical: SPACING.xl,
-        backgroundColor: COLORS.white, borderTopWidth: 1, borderTopColor: COLORS.border,
+        borderTopWidth: 1,
     },
 });

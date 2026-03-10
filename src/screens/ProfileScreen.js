@@ -31,7 +31,7 @@ export default function ProfileScreen({ navigation }) {
     const displayEmail = userData?.email || currentUser?.email || '';
     const avatarUri = userData?.avatar
         || currentUser?.photoURL
-        || `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=4CAF50&color=fff&size=200`;
+        || `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=${isDark ? '1F222A' : '4CAF50'}&color=fff&size=200`;
 
     const handleLogout = async () => {
         try {
@@ -57,7 +57,7 @@ export default function ProfileScreen({ navigation }) {
                                 style={styles.avatar}
                             />
                             <TouchableOpacity
-                                style={styles.editBadge}
+                                style={[styles.editBadge, { borderColor: colors.background }]}
                                 onPress={() => navigation.navigate('EditProfile')}
                             >
                                 <Ionicons name="pencil" size={14} color={COLORS.white} />
@@ -117,7 +117,7 @@ export default function ProfileScreen({ navigation }) {
 
 
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: COLORS.white },
+    container: { flex: 1 },
     header: {
         flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
         paddingHorizontal: SPACING.lg, paddingVertical: SPACING.md,
@@ -132,10 +132,10 @@ const styles = StyleSheet.create({
     editBadge: {
         position: 'absolute', bottom: 4, right: 4,
         backgroundColor: COLORS.primary, width: 30, height: 30, borderRadius: 10,
-        alignItems: 'center', justifyContent: 'center', borderWidth: 3, borderColor: COLORS.white,
+        alignItems: 'center', justifyContent: 'center', borderWidth: 3,
     },
     name: { ...TYPOGRAPHY.h2, marginBottom: 4 },
-    email: { ...TYPOGRAPHY.bodySmall, color: COLORS.text, fontWeight: '600' },
+    email: { ...TYPOGRAPHY.bodySmall, fontWeight: '600' },
     menuContainer: {
         paddingHorizontal: SPACING.lg,
     },
@@ -145,8 +145,8 @@ const styles = StyleSheet.create({
     },
     menuLeft: { flexDirection: 'row', alignItems: 'center', gap: 16 },
     menuRight: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-    menuLabel: { ...TYPOGRAPHY.body, fontWeight: '600', color: COLORS.text },
-    menuValue: { ...TYPOGRAPHY.body, fontWeight: '600', color: COLORS.text, marginRight: 8 },
+    menuLabel: { ...TYPOGRAPHY.body, fontWeight: '600' },
+    menuValue: { ...TYPOGRAPHY.body, fontWeight: '600', marginRight: 8 },
     toggle: {
         width: 44, height: 24, borderRadius: 12, padding: 2,
         justifyContent: 'center',

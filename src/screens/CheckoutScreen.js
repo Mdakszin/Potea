@@ -105,7 +105,7 @@ export default function CheckoutScreen({ route, navigation }) {
                 shippingFee,
                 promoDiscount,
                 total,
-                status: 'Processing',
+                status: 0, // 0 = Order Placed
                 shippingAddress: selectedAddress,
                 paymentMethod: selectedPayment.label,
                 createdAt: serverTimestamp(),

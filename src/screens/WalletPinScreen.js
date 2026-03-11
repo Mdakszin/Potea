@@ -94,7 +94,7 @@ export default function WalletPinScreen({ route, navigation }) {
                         orderId,
                         userId: currentUser.uid,
                         paymentMethod: 'Potea E-Wallet',
-                        status: 'Processing',
+                        status: 0, // 0 = Order Placed
                         createdAt: serverTimestamp(),
                         updatedAt: serverTimestamp(),
                     });

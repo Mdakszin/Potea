@@ -1,30 +1,44 @@
 import React, { useState, useEffect } from 'react';
 import {
     View, Text, StyleSheet, TouchableOpacity,
-    ScrollView, Image, ActivityIndicator
+    ScrollView, Image, ActivityIndicator, LayoutAnimation, UIManager, Platform
 } from 'react-native';
 import { COLORS, TYPOGRAPHY, SPACING } from '../constants/theme';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { db } from '../config/firebase';
 import { doc, onSnapshot } from 'firebase/firestore';
+import { useTheme } from '../contexts/ThemeContext';
+
+if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
+    UIManager.setLayoutAnimationEnabledExperimental(true);
+}
 
 export default function TrackOrderScreen({ route, navigation }) {
-    const { order: initialOrder } = route.params;
-    const [order, setOrder] = useState(initialOrder);
-    const [loading, setLoading] = useState(false);
+    const { orderId } = route.params;
+    const [order, setOrder] = useState(null);
+    const { colors, isDark } = useTheme();
 
     useEffect(() => {
-        if (!initialOrder?.id) return;
+        if (!orderId) return;
 
-        const unsubscribe = onSnapshot(doc(db, 'orders', initialOrder.id), (snapshot) => {
+        const unsubscribe = onSnapshot(doc(db, 'orders', orderId), (snapshot) => {
             if (snapshot.exists()) {
+                LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
                 setOrder({ id: snapshot.id, ...snapshot.data() });
             }
         });
 
         return () => unsubscribe();
-    }, [initialOrder.id]);
+    }, [orderId]);
+
+    if (!order) {
+        return (
+            <SafeAreaView style={[styles.container, { backgroundColor: colors.background, justifyContent: 'center', alignItems: 'center' }]}>
+                <ActivityIndicator size="large" color={COLORS.primary} />
+            </SafeAreaView>
+        );
+    }
 
     const firstItem = order.items?.[0] || {};
     const totalItems = order.items?.reduce((sum, i) => sum + i.qty, 0) || 0;
@@ -42,39 +56,35 @@ export default function TrackOrderScreen({ route, navigation }) {
         return date.toLocaleDateString([], { month: 'short', day: 'numeric' });
     };
 
-    const getStatusIndex = (status) => {
-        const statuses = ['Processing', 'Packed', 'Shipping', 'Delivered'];
-        return statuses.indexOf(status);
-    };
-
-    const statusIdx = getStatusIndex(order.status);
+    const statusIdx = typeof order.status === 'number' ? order.status : 0;
+    const statusLabels = ['Order Placed', 'Processing', 'Shipping', 'Delivered'];
 
     const steps = [
-        { title: 'Order Placed', status: 'done', time: formatTime(order.createdAt), date: formatDate(order.createdAt), icon: 'receipt' },
-        { title: 'Processing', status: statusIdx >= 0 ? 'done' : 'pending', time: '', date: '', icon: 'cube' },
-        { title: 'Shipping', status: statusIdx >= 2 ? 'done' : 'pending', time: '', date: '', icon: 'bicycle' },
-        { title: 'Delivered', status: statusIdx >= 3 ? 'done' : 'pending', time: '', date: '', icon: 'checkmark-circle' },
+        { title: 'Order Placed', status: statusIdx >= 0 ? 'done' : 'pending', time: statusIdx >= 0 ? formatTime(order.createdAt) : '', date: statusIdx >= 0 ? formatDate(order.createdAt) : '', icon: 'receipt' },
+        { title: 'Processing', status: statusIdx >= 1 ? 'done' : 'pending', time: statusIdx >= 1 ? formatTime(order.updatedAt) : '', date: statusIdx >= 1 ? formatDate(order.updatedAt) : '', icon: 'cube' },
+        { title: 'Shipping', status: statusIdx >= 2 ? 'done' : 'pending', time: statusIdx >= 2 ? formatTime(order.updatedAt) : '', date: statusIdx >= 2 ? formatDate(order.updatedAt) : '', icon: 'bicycle' },
+        { title: 'Delivered', status: statusIdx >= 3 ? 'done' : 'pending', time: statusIdx >= 3 ? formatTime(order.updatedAt) : '', date: statusIdx >= 3 ? formatDate(order.updatedAt) : '', icon: 'checkmark-circle' },
     ];
 
     return (
-        <SafeAreaView style={styles.container}>
+        <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
             <View style={styles.header}>
                 <TouchableOpacity onPress={() => navigation.goBack()} style={styles.backBtn}>
-                    <Ionicons name="arrow-back" size={24} color={COLORS.text} />
+                    <Ionicons name="arrow-back" size={24} color={colors.text} />
                 </TouchableOpacity>
-                <Text style={styles.headerTitle}>Track Order</Text>
+                <Text style={[styles.headerTitle, { color: colors.text }]}>Track Order</Text>
                 <TouchableOpacity style={styles.headerIcon}>
-                    <Ionicons name="search" size={24} color={COLORS.text} />
+                    <Ionicons name="search" size={24} color={colors.text} />
                 </TouchableOpacity>
             </View>
 
             <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
                 {/* Order Summary Card */}
-                <View style={styles.orderSummaryCard}>
-                    <Image source={{ uri: firstItem.image }} style={styles.orderImage} />
+                <View style={[styles.orderSummaryCard, { backgroundColor: colors.card, borderColor: colors.border }]}>
+                    <Image source={{ uri: firstItem.image }} style={[styles.orderImage, { backgroundColor: colors.surface }]} />
                     <View style={styles.orderInfo}>
-                        <Text style={styles.plantName}>{firstItem.name} {order.items?.length > 1 ? `+ ${order.items.length - 1}` : ''}</Text>
-                        <Text style={styles.orderQty}>Total Items: {totalItems}</Text>
+                        <Text style={[styles.plantName, { color: colors.text }]}>{firstItem.name} {order.items?.length > 1 ? `+ ${order.items.length - 1}` : ''}</Text>
+                        <Text style={[styles.orderQty, { color: colors.textLight }]}>Total Items: {totalItems}</Text>
                         <Text style={styles.orderPrice}>${order.total.toFixed(2)}</Text>
                     </View>
                 </View>
@@ -85,40 +95,44 @@ export default function TrackOrderScreen({ route, navigation }) {
                         <View style={styles.iconCircleActive}>
                             <Ionicons name="receipt" size={24} color={COLORS.primary} />
                         </View>
-                        <View style={statusIdx >= 0 ? styles.connectorActive : styles.connectorInactive} />
-                        <View style={statusIdx >= 0 ? styles.iconCircleActive : styles.iconCircleInactive}>
-                            <Ionicons name="cube" size={24} color={statusIdx >= 0 ? COLORS.primary : COLORS.textLight} />
+                        <View style={[statusIdx >= 1 ? styles.connectorActive : styles.connectorInactive, { backgroundColor: statusIdx >= 1 ? COLORS.primary : colors.border }]} />
+                        <View style={statusIdx >= 1 ? styles.iconCircleActive : [styles.iconCircleInactive, { backgroundColor: colors.card }]}>
+                            <Ionicons name="cube" size={24} color={statusIdx >= 1 ? COLORS.primary : colors.textLight} />
                         </View>
-                        <View style={statusIdx >= 2 ? styles.connectorActive : styles.connectorInactive} />
-                        <View style={statusIdx >= 2 ? styles.iconCircleActive : styles.iconCircleInactive}>
-                            <Ionicons name="bicycle" size={24} color={statusIdx >= 2 ? COLORS.primary : COLORS.textLight} />
+                        <View style={[statusIdx >= 2 ? styles.connectorActive : styles.connectorInactive, { backgroundColor: statusIdx >= 2 ? COLORS.primary : colors.border }]} />
+                        <View style={statusIdx >= 2 ? styles.iconCircleActive : [styles.iconCircleInactive, { backgroundColor: colors.card }]}>
+                            <Ionicons name="bicycle" size={24} color={statusIdx >= 2 ? COLORS.primary : colors.textLight} />
                         </View>
-                        <View style={statusIdx >= 3 ? styles.connectorActive : styles.connectorInactive} />
-                        <View style={statusIdx >= 3 ? styles.iconCircleActive : styles.iconCircleInactive}>
-                            <Ionicons name="checkmark-circle" size={24} color={statusIdx >= 3 ? COLORS.primary : COLORS.textLight} />
+                        <View style={[statusIdx >= 3 ? styles.connectorActive : styles.connectorInactive, { backgroundColor: statusIdx >= 3 ? COLORS.primary : colors.border }]} />
+                        <View style={statusIdx >= 3 ? styles.iconCircleActive : [styles.iconCircleInactive, { backgroundColor: colors.card }]}>
+                            <Ionicons name="checkmark-circle" size={24} color={statusIdx >= 3 ? COLORS.primary : colors.textLight} />
                         </View>
                     </View>
-                    <Text style={styles.trackingStatusText}>{order.status}</Text>
+                    <Text style={[styles.trackingStatusText, { color: colors.text }]}>{statusLabels[statusIdx]}</Text>
                 </View>
 
                 {/* Status Details */}
                 <View style={styles.detailsHeader}>
-                    <Text style={styles.detailsTitle}>Order Status Details</Text>
+                    <Text style={[styles.detailsTitle, { color: colors.text }]}>Order Status Details</Text>
                 </View>
 
                 <View style={styles.timelineContainer}>
                     {steps.map((step, index) => (
                         <View key={index} style={styles.timelineItem}>
                             <View style={styles.timelineLeft}>
-                                <View style={[styles.timelineDot, step.status === 'done' && styles.dotDone]} />
-                                {index < steps.length - 1 && <View style={[styles.timelineLine, steps[index + 1].status === 'done' && styles.lineDone]} />}
+                                <View style={[styles.timelineDot, { borderColor: colors.background, backgroundColor: colors.border }, step.status === 'done' && styles.dotDone]} />
+                                {index < steps.length - 1 && <View style={[styles.timelineLine, { backgroundColor: colors.border }, steps[index + 1].status === 'done' && styles.lineDone]} />}
                             </View>
                             <View style={styles.timelineContent}>
                                 <View style={styles.stepTitleRow}>
-                                    <Text style={styles.stepTitle}>{step.title}</Text>
+                                    <Text style={[styles.stepTitle, { color: colors.text }]}>{step.title}</Text>
                                     <Text style={styles.stepTime}>{step.time} {step.date}</Text>
                                 </View>
-                                {index === 0 && <Text style={styles.stepLocation}>{order.shippingAddress.address}, {order.shippingAddress.city}</Text>}
+                                {index === 0 && order.shippingAddress && (
+                                    <Text style={[styles.stepLocation, { color: colors.textLight }]}>
+                                        {order.shippingAddress.address || order.shippingAddress.street}, {order.shippingAddress.city}
+                                    </Text>
+                                )}
                             </View>
                         </View>
                     ))}
@@ -131,7 +145,6 @@ export default function TrackOrderScreen({ route, navigation }) {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: COLORS.white,
     },
     header: {
         flexDirection: 'row',
@@ -154,18 +167,15 @@ const styles = StyleSheet.create({
     },
     orderSummaryCard: {
         flexDirection: 'row',
-        backgroundColor: COLORS.white,
         borderRadius: 24,
         padding: SPACING.lg,
         marginBottom: SPACING.xl,
         borderWidth: 1,
-        borderColor: COLORS.border,
     },
     orderImage: {
         width: 100,
         height: 100,
         borderRadius: 20,
-        backgroundColor: COLORS.card,
     },
     orderInfo: {
         flex: 1,
@@ -178,7 +188,6 @@ const styles = StyleSheet.create({
     },
     orderQty: {
         ...TYPOGRAPHY.bodySmall,
-        color: COLORS.textLight,
         marginBottom: 8,
     },
     orderPrice: {
@@ -206,19 +215,16 @@ const styles = StyleSheet.create({
         width: 48,
         height: 48,
         borderRadius: 24,
-        backgroundColor: COLORS.card,
         alignItems: 'center',
         justifyContent: 'center',
     },
     connectorActive: {
         width: 30,
         height: 2,
-        backgroundColor: COLORS.primary,
     },
     connectorInactive: {
         width: 30,
         height: 2,
-        backgroundColor: COLORS.border,
     },
     trackingStatusText: {
         ...TYPOGRAPHY.body,
@@ -246,8 +252,6 @@ const styles = StyleSheet.create({
         height: 20,
         borderRadius: 10,
         borderWidth: 4,
-        borderColor: COLORS.white,
-        backgroundColor: COLORS.border,
         zIndex: 2,
     },
     dotDone: {
@@ -257,7 +261,6 @@ const styles = StyleSheet.create({
     timelineLine: {
         width: 2,
         flex: 1,
-        backgroundColor: COLORS.border,
         marginTop: -4,
         marginBottom: -4,
     },
@@ -285,7 +288,6 @@ const styles = StyleSheet.create({
     },
     stepLocation: {
         ...TYPOGRAPHY.bodySmall,
-        color: COLORS.textLight,
         lineHeight: 18,
     },
 });

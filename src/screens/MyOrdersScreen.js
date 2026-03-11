@@ -116,7 +116,7 @@ export default function MyOrdersScreen({ navigation }) {
                         {activeTab === 'active' ? (
                             <TouchableOpacity
                                 style={styles.actionBtn}
-                                onPress={() => navigation.navigate('TrackOrder', { order: item })}
+                                onPress={() => navigation.navigate('TrackOrder', { orderId: item.id })}
                             >
                                 <Text style={styles.actionBtnText}>Track Order</Text>
                             </TouchableOpacity>

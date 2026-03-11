@@ -101,7 +101,7 @@ export default function OrderSuccessScreen({ route, navigation }) {
             <View style={styles.footer}>
                 <Button
                     title="Track Your Order"
-                    onPress={() => navigation.navigate('Main', { screen: 'Orders' })}
+                    onPress={() => navigation.navigate('TrackOrder', { orderId })}
                     style={styles.trackBtn}
                 />
                 <Button

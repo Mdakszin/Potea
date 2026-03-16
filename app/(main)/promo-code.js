@@ -8,11 +8,13 @@ import { db } from '../../src/config/firebase';
 import { collection, query, where, onSnapshot } from 'firebase/firestore';
 import { useTheme } from '../../src/contexts/ThemeContext';
 import { useRouter } from 'expo-router';
+import useCheckoutStore from '../../src/store/useCheckoutStore';
 
 export default function PromoCodeScreen() {
     const { colors, isDark } = useTheme();
+    const { appliedPromo, setAppliedPromo } = useCheckoutStore();
     const [code, setCode] = useState('');
-    const [applied, setApplied] = useState(null);
+    const [applied, setApplied] = useState(appliedPromo);
     const [promos, setPromos] = useState([]);
     const [loading, setLoading] = useState(true);
     const router = useRouter();
@@ -79,7 +81,7 @@ export default function PromoCodeScreen() {
                     )}
                 />
             )}
-            <View style={styles.footer}><Button title="Apply Promo Code" onPress={() => router.push({ pathname: '/(main)/checkout', params: { appliedPromo: JSON.stringify(applied) } })} disabled={!applied} /></View>
+            <View style={styles.footer}><Button title="Apply Promo Code" onPress={() => { setAppliedPromo(applied); router.push('/(main)/checkout'); }} disabled={!applied} /></View>
         </SafeAreaView>
     );
 }

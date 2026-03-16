@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity, Dimensions, Platform } from 'react-native';
+import { View, Text, StyleSheet, Image, TouchableOpacity, Dimensions, Platform, Alert } from 'react-native';
 import { COLORS, TYPOGRAPHY, SPACING, SHADOWS } from '../constants/theme';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../contexts/ThemeContext';
 import { useAuth } from '../contexts/AuthContext';
-import { doc, updateDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
+import { doc, updateDoc, arrayUnion, arrayRemove, setDoc, getDoc } from 'firebase/firestore';
 import { db } from '../config/firebase';
 
 export default function PlantCard({ item, onPress, onToggleFavorite, style }) {
@@ -14,6 +14,7 @@ export default function PlantCard({ item, onPress, onToggleFavorite, style }) {
     // Determine early if this is favored (fallback to item prop if auth isn't loaded)
     const isInitiallyFav = userData?.favorites ? userData.favorites.includes(item.id) : item.isFavorite || false;
     const [isFav, setIsFav] = useState(isInitiallyFav);
+    const [addingToCart, setAddingToCart] = useState(false);
 
     // Sync state if userData changes remotely
     useEffect(() => {
@@ -37,6 +38,38 @@ export default function PlantCard({ item, onPress, onToggleFavorite, style }) {
                 console.error('Error updating favorites:', error);
                 setIsFav(!newFavState); // Revert on failure
             }
+        }
+    };
+
+    const addToCart = async () => {
+        if (!currentUser) {
+            Alert.alert('Login Required', 'Please sign in to add items to your cart.');
+            return;
+        }
+        setAddingToCart(true);
+        try {
+            const cartItemRef = doc(db, 'users', currentUser.uid, 'cart', item.id);
+            const cartDoc = await getDoc(cartItemRef);
+            if (cartDoc.exists()) {
+                const existingQty = cartDoc.data().qty || 1;
+                await setDoc(cartItemRef, { ...cartDoc.data(), qty: existingQty + 1 }, { merge: true });
+            } else {
+                await setDoc(cartItemRef, {
+                    id: item.id,
+                    name: item.name,
+                    price: item.price,
+                    image: item.image,
+                    qty: 1,
+                    size: item.sizes ? item.sizes[0] : 'Medium',
+                    createdAt: new Date(),
+                });
+            }
+            Alert.alert('Added!', `${item.name} has been added to your cart.`);
+        } catch (error) {
+            console.error('Error adding to cart:', error);
+            Alert.alert('Error', 'Could not add to cart. Please try again.');
+        } finally {
+            setAddingToCart(false);
         }
     };
 
@@ -71,9 +104,9 @@ export default function PlantCard({ item, onPress, onToggleFavorite, style }) {
                 </View>
 
                 {/* Add to Cart */}
-                <TouchableOpacity style={styles.addButton} activeOpacity={0.8}>
-                    <Ionicons name="add" size={18} color={COLORS.white} />
-                    <Text style={styles.addButtonText}>Add to Cart</Text>
+                <TouchableOpacity style={[styles.addButton, addingToCart && { opacity: 0.6 }]} activeOpacity={0.8} onPress={addToCart} disabled={addingToCart}>
+                    <Ionicons name={addingToCart ? "hourglass-outline" : "add"} size={18} color={COLORS.white} />
+                    <Text style={styles.addButtonText}>{addingToCart ? 'Adding...' : 'Add to Cart'}</Text>
                 </TouchableOpacity>
             </View>
         </TouchableOpacity>

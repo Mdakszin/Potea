@@ -8,17 +8,36 @@ import Button from '../../src/components/Button';
 import { COLORS, TYPOGRAPHY, SPACING } from '../../src/constants/theme';
 import { db } from '../../src/config/firebase';
 import { collection, doc, runTransaction, serverTimestamp } from 'firebase/firestore';
-import { useRouter, useLocalSearchParams } from 'expo-router';
+import { useRouter } from 'expo-router';
+import useCheckoutStore from '../../src/store/useCheckoutStore';
 
 const STRIPE_PUBLISHABLE_KEY = process.env.EXPO_PUBLIC_STRIPE_PUBLISHABLE_KEY;
 const STRIPE_SECRET_KEY = process.env.EXPO_PUBLIC_STRIPE_SECRET_KEY;
 
 export default function StripePaymentScreen() {
-    const { amount, address: addressStr, shipping: shippingStr, promo: promoStr, cart: cartStr } = useLocalSearchParams();
-    const address = addressStr ? JSON.parse(addressStr) : null;
-    const shipping = shippingStr ? JSON.parse(shippingStr) : null;
-    const promo = promoStr ? JSON.parse(promoStr) : null;
-    const cart = cartStr ? JSON.parse(cartStr) : [];
+    const { 
+        selectedAddress, 
+        selectedShipping, 
+        appliedPromo, 
+        checkoutCart,
+        resetCheckout
+    } = useCheckoutStore();
+
+    const cart = checkoutCart;
+    const address = selectedAddress;
+    const shipping = selectedShipping;
+    const promo = appliedPromo;
+
+    // Calculate total
+    const subtotal = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
+    const shippingFee = shipping?.price || 0;
+    let promoDiscount = 0;
+    if (promo) {
+        if (promo.type === 'percentage') promoDiscount = subtotal * (promo.value / 100);
+        else if (promo.type === 'fixed') promoDiscount = promo.value;
+        promoDiscount = Math.min(promoDiscount, subtotal);
+    }
+    const amount = subtotal + shippingFee - promoDiscount;
     
     const { currentUser } = useAuth();
     const { colors } = useTheme();
@@ -68,10 +87,33 @@ export default function StripePaymentScreen() {
             const orderId = 'ORD-' + Date.now();
             await runTransaction(db, async (transaction) => {
                 const transRef = doc(collection(db, 'users', currentUser.uid, 'transactions'));
-                transaction.set(transRef, { id: transRef.id, name: 'Order Payment (Stripe)', amount: Number(amount), isTopUp: false, date: new Date().toLocaleDateString(), createdAt: serverTimestamp() });
+                transaction.set(transRef, { 
+                    id: transRef.id, 
+                    name: 'Order Payment (Stripe)', 
+                    amount: Number(amount), 
+                    isTopUp: false, 
+                    date: new Date().toLocaleDateString(), 
+                    createdAt: serverTimestamp(),
+                    subtotal,
+                    shippingFee,
+                    promoDiscount
+                });
                 const orderRef = doc(db, 'users', currentUser.uid, 'orders', orderId);
-                transaction.set(orderRef, { id: orderId, items: cart, address, shipping, payment: { label: 'Credit Card', method: 'card' }, total: Number(amount), status: 'Active', createdAt: serverTimestamp() });
+                transaction.set(orderRef, { 
+                    id: orderId, 
+                    items: cart, 
+                    address, 
+                    shipping, 
+                    payment: { label: 'Credit Card', method: 'card' }, 
+                    subtotal,
+                    shippingFee,
+                    promoDiscount,
+                    total: Number(amount), 
+                    status: 'Active', 
+                    createdAt: serverTimestamp() 
+                });
             });
+            resetCheckout();
             router.replace({ pathname: '/(main)/order-success', params: { orderId, total: amount } });
         } catch (error) {
             console.error("Payment error:", error);

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     View, Text, StyleSheet, FlatList, Image,
     TouchableOpacity, TextInput, ScrollView, Platform
@@ -13,6 +13,8 @@ import { useResponsive } from '../../../src/utils/responsive';
 import { useAuth } from '../../../src/contexts/AuthContext';
 import { useTheme } from '../../../src/contexts/ThemeContext';
 import { useRouter } from 'expo-router';
+import { collection, onSnapshot } from 'firebase/firestore';
+import { db } from '../../../src/config/firebase';
 
 const BANNERS = [
     {
@@ -38,9 +40,21 @@ export default function HomeScreen() {
     const [search, setSearch] = useState('');
     const [activeCategory, setActiveCategory] = useState('all');
     const [activeBanner, setActiveBanner] = useState(0);
+    const [cartCount, setCartCount] = useState(0);
     const router = useRouter();
 
     const displayName = userData?.name || currentUser?.displayName || 'User';
+
+    // Real-time cart count listener
+    useEffect(() => {
+        if (!currentUser) { setCartCount(0); return; }
+        const cartRef = collection(db, 'users', currentUser.uid, 'cart');
+        const unsubscribe = onSnapshot(cartRef, (snapshot) => {
+            const totalItems = snapshot.docs.reduce((sum, doc) => sum + (doc.data().qty || 1), 0);
+            setCartCount(totalItems);
+        }, () => setCartCount(0));
+        return () => unsubscribe();
+    }, [currentUser]);
 
     const getGreeting = () => {
         const hour = new Date().getHours();
@@ -83,6 +97,11 @@ export default function HomeScreen() {
                             </TouchableOpacity>
                             <TouchableOpacity style={[styles.iconBtn, { borderColor: colors.border }]} onPress={() => router.push('/(main)/cart')}>
                                 <Ionicons name="cart-outline" size={24} color={colors.text} />
+                                {cartCount > 0 && (
+                                    <View style={styles.cartBadge}>
+                                        <Text style={styles.cartBadgeText}>{cartCount > 99 ? '99+' : cartCount}</Text>
+                                    </View>
+                                )}
                             </TouchableOpacity>
                             <TouchableOpacity style={styles.avatarContainer} onPress={() => router.push('/(main)/(tabs)/profile')}>
                                 <Image
@@ -197,7 +216,9 @@ const styles = StyleSheet.create({
     greeting: { fontSize: 13, fontWeight: '400' },
     username: { fontSize: 20, fontWeight: '700' },
     headerRight: { flexDirection: 'row', alignItems: 'center', gap: SPACING.md },
-    iconBtn: { width: 44, height: 44, borderRadius: 22, borderWidth: 1, alignItems: 'center', justifyContent: 'center' },
+    iconBtn: { width: 44, height: 44, borderRadius: 22, borderWidth: 1, alignItems: 'center', justifyContent: 'center', position: 'relative' },
+    cartBadge: { position: 'absolute', top: -4, right: -4, backgroundColor: COLORS.primary, borderRadius: 10, minWidth: 20, height: 20, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 4, borderWidth: 2, borderColor: '#fff' },
+    cartBadgeText: { color: '#fff', fontSize: 10, fontWeight: '700' },
     avatarContainer: { width: 46, height: 46, borderRadius: 23, overflow: 'hidden', borderWidth: 2, borderColor: COLORS.primary },
     avatar: { width: '100%', height: '100%' },
     searchRow: { flexDirection: 'row', paddingHorizontal: SPACING.lg, marginBottom: SPACING.lg, gap: SPACING.sm },

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
     View, Text, StyleSheet, FlatList,
-    Image, TouchableOpacity, Alert, ActivityIndicator
+    Image, TouchableOpacity, Alert, ActivityIndicator, Platform
 } from 'react-native';
 import { COLORS, TYPOGRAPHY, SPACING } from '../../src/constants/theme';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -143,7 +143,26 @@ const styles = StyleSheet.create({
     header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: SPACING.lg },
     headerTitle: { fontSize: 24, fontWeight: '700' },
     list: { padding: SPACING.lg },
-    cartItem: { flexDirection: 'row', padding: SPACING.md, borderRadius: 20, marginBottom: SPACING.md, elevation: 2, shadowOpacity: 0.1, shadowRadius: 4, shadowOffset: { width: 0, height: 2 } },
+    cartItem: { 
+        flexDirection: 'row', 
+        padding: SPACING.md, 
+        borderRadius: 20, 
+        marginBottom: SPACING.md, 
+        ...Platform.select({
+            ios: {
+                shadowColor: '#000',
+                shadowOpacity: 0.1,
+                shadowRadius: 4,
+                shadowOffset: { width: 0, height: 2 },
+            },
+            android: {
+                elevation: 2,
+            },
+            web: {
+                boxShadow: '0px 2px 4px rgba(0,0,0,0.1)',
+            }
+        })
+    },
     itemImage: { width: 100, height: 100, borderRadius: 16 },
     itemDetails: { flex: 1, marginLeft: SPACING.md, justifyContent: 'space-between' },
     itemHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },

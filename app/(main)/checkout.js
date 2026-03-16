@@ -11,19 +11,22 @@ import { db } from '../../src/config/firebase';
 import { collection, query, where, getDocs, doc, setDoc, runTransaction, serverTimestamp, onSnapshot } from 'firebase/firestore';
 import { useAuth } from '../../src/contexts/AuthContext';
 import { useTheme } from '../../src/contexts/ThemeContext';
-import { useRouter, useLocalSearchParams } from 'expo-router';
+import { useRouter } from 'expo-router';
+import useCheckoutStore from '../../src/store/useCheckoutStore';
 
 export default function CheckoutScreen() {
     const { currentUser, userData } = useAuth();
     const { colors, isDark } = useTheme();
     const router = useRouter();
-    const params = useLocalSearchParams();
+    
+    const { 
+        selectedAddress, setSelectedAddress,
+        selectedShipping,
+        selectedPayment,
+        appliedPromo,
+        checkoutCart, setCheckoutCart
+    } = useCheckoutStore();
 
-    const [cart, setCart] = useState([]);
-    const [address, setAddress] = useState(null);
-    const [shipping, setShipping] = useState({ id: '2', type: 'Regular', icon: 'bicycle-outline', price: 2.99, days: '3-5 days', arrival: 'Mar 10 – 12' });
-    const [payment, setPayment] = useState({ id: 'wallet', label: 'Potea E-Wallet', method: 'wallet', icon: 'wallet-outline' });
-    const [promo, setPromo] = useState(null);
     const [loadingAddr, setLoadingAddr] = useState(true);
     const [isPlacingOrder, setIsPlacingOrder] = useState(false);
 
@@ -32,20 +35,23 @@ export default function CheckoutScreen() {
         const cartRef = collection(db, 'users', currentUser.uid, 'cart');
         const unsubscribe = onSnapshot(cartRef, (snapshot) => {
             const items = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
-            setCart(items);
+            setCheckoutCart(items);
         });
         return () => unsubscribe();
     }, [currentUser]);
 
     useEffect(() => {
-        if (!currentUser) return;
+        if (!currentUser || selectedAddress) {
+            setLoadingAddr(false);
+            return;
+        }
         const fetchDefaultAddress = async () => {
             try {
                 const q = query(collection(db, 'users', currentUser.uid, 'addresses'), where('isDefault', '==', true));
                 const querySnapshot = await getDocs(q);
                 if (!querySnapshot.empty) {
                     const docSnap = querySnapshot.docs[0];
-                    if (!address) setAddress({ id: docSnap.id, ...docSnap.data() });
+                    setSelectedAddress({ id: docSnap.id, ...docSnap.data() });
                 }
             } catch (error) {
                 console.error("Error fetching default address:", error);
@@ -56,12 +62,11 @@ export default function CheckoutScreen() {
         fetchDefaultAddress();
     }, [currentUser]);
 
-    useEffect(() => {
-        if (params.selectedAddress) setAddress(JSON.parse(params.selectedAddress));
-        if (params.selectedShipping) setShipping(JSON.parse(params.selectedShipping));
-        if (params.selectedPayment) setPayment(JSON.parse(params.selectedPayment));
-        if (params.appliedPromo) setPromo(JSON.parse(params.appliedPromo));
-    }, [params]);
+    const cart = checkoutCart;
+    const address = selectedAddress;
+    const shipping = selectedShipping;
+    const payment = selectedPayment;
+    const promo = appliedPromo;
 
     const subtotal = cart.reduce((sum, item) => sum + (item.price * item.qty), 0);
     const shippingFee = shipping?.price || 0;
@@ -89,12 +94,35 @@ export default function CheckoutScreen() {
                     transaction.update(userRef, { balance: newBalance });
                     const orderId = 'ORD-' + Date.now();
                     const orderRef = doc(db, 'users', currentUser.uid, 'orders', orderId);
-                    transaction.set(orderRef, { id: orderId, items: cart, address, shipping, payment, subtotal, shippingFee, promoDiscount, total, status: 'Active', createdAt: serverTimestamp() });
+                    transaction.set(orderRef, { 
+                        id: orderId, 
+                        items: cart, 
+                        address, 
+                        shipping, 
+                        payment, 
+                        subtotal, 
+                        shippingFee, 
+                        promoDiscount, 
+                        total, 
+                        status: 'Active', 
+                        createdAt: serverTimestamp() 
+                    });
                     const transRef = doc(collection(db, 'users', currentUser.uid, 'transactions'));
-                    transaction.set(transRef, { id: transRef.id, name: 'Order Payment', amount: total, isTopUp: false, date: new Date().toLocaleDateString(), createdAt: serverTimestamp() });
+                    transaction.set(transRef, { 
+                        id: transRef.id, 
+                        name: 'Order Payment', 
+                        amount: total, 
+                        isTopUp: false, 
+                        date: new Date().toLocaleDateString(), 
+                        createdAt: serverTimestamp(),
+                        subtotal,
+                        shippingFee,
+                        promoDiscount
+                    });
                 });
+                useCheckoutStore.getState().resetCheckout();
             } else if (payment.method === 'card') {
-                router.push({ pathname: '/(main)/stripe-payment', params: { amount: total, address: JSON.stringify(address), shipping: JSON.stringify(shipping), promo: JSON.stringify(promo), cart: JSON.stringify(cart) } });
+                router.push('/(main)/stripe-payment');
                 setIsPlacingOrder(false);
                 return;
             }

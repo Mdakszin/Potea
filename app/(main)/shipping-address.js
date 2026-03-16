@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator, Platform } from 'react-native';
 import { COLORS, TYPOGRAPHY, SPACING } from '../../src/constants/theme';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -9,10 +9,12 @@ import { collection, query, getDocs } from 'firebase/firestore';
 import { useAuth } from '../../src/contexts/AuthContext';
 import { useRouter } from 'expo-router';
 import { useTheme } from '../../src/contexts/ThemeContext';
+import useCheckoutStore from '../../src/store/useCheckoutStore';
 
 export default function ShippingAddressScreen() {
     const { currentUser } = useAuth();
     const { colors } = useTheme();
+    const { setSelectedAddress } = useCheckoutStore();
     const [addresses, setAddresses] = useState([]);
     const [loading, setLoading] = useState(true);
     const router = useRouter();
@@ -36,7 +38,8 @@ export default function ShippingAddressScreen() {
     };
 
     const handleSelectAddress = (address) => {
-        router.push({ pathname: '/(main)/checkout', params: { selectedAddress: JSON.stringify(address) } });
+        setSelectedAddress(address);
+        router.push('/(main)/checkout');
     };
 
     const renderItem = ({ item }) => (
@@ -84,7 +87,27 @@ const styles = StyleSheet.create({
     header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: SPACING.lg },
     title: { fontSize: 24, fontWeight: '700' },
     list: { padding: SPACING.lg, paddingBottom: 100 },
-    addressCard: { flexDirection: 'row', alignItems: 'center', padding: SPACING.lg, borderRadius: 24, marginBottom: SPACING.md, elevation: 2, shadowOpacity: 0.05, shadowRadius: 10 },
+    addressCard: { 
+        flexDirection: 'row', 
+        alignItems: 'center', 
+        padding: SPACING.lg, 
+        borderRadius: 24, 
+        marginBottom: SPACING.md, 
+        ...Platform.select({
+            ios: {
+                shadowColor: '#000',
+                shadowOpacity: 0.05,
+                shadowRadius: 10,
+                shadowOffset: { width: 0, height: 2 },
+            },
+            android: {
+                elevation: 2,
+            },
+            web: {
+                boxShadow: '0px 2px 10px rgba(0,0,0,0.05)',
+            }
+        })
+    },
     addressLeft: { flex: 1, flexDirection: 'row', alignItems: 'center' },
     iconContainer: { width: 52, height: 52, borderRadius: 26, alignItems: 'center', justifyContent: 'center', marginRight: 16 },
     addressInfo: { flex: 1 },

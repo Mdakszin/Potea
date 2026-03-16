@@ -6,6 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import Button from '../../src/components/Button';
 import { useRouter } from 'expo-router';
 import { useTheme } from '../../src/contexts/ThemeContext';
+import useCheckoutStore from '../../src/store/useCheckoutStore';
 
 const SHIPPING_OPTIONS = [
     { id: '1', type: 'Economy', icon: 'walk-outline', days: '5–8 days', arrival: 'Mar 14–17', price: 0.99, company: 'LocalPost' },
@@ -16,12 +17,14 @@ const SHIPPING_OPTIONS = [
 
 export default function ChooseShippingScreen() {
     const { colors } = useTheme();
-    const [selected, setSelected] = useState('2');
+    const { selectedShipping, setSelectedShipping } = useCheckoutStore();
+    const [selected, setSelected] = useState(selectedShipping?.id || '2');
     const router = useRouter();
 
     const handleApply = () => {
         const selectedOption = SHIPPING_OPTIONS.find(s => s.id === selected);
-        router.push({ pathname: '/(main)/checkout', params: { selectedShipping: JSON.stringify(selectedOption) } });
+        setSelectedShipping(selectedOption);
+        router.push('/(main)/checkout');
     };
 
     return (

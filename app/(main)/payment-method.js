@@ -7,13 +7,14 @@ import Button from '../../src/components/Button';
 import { useTheme } from '../../src/contexts/ThemeContext';
 import { useAuth } from '../../src/contexts/AuthContext';
 import { useRouter, useLocalSearchParams } from 'expo-router';
+import useCheckoutStore from '../../src/store/useCheckoutStore';
 
 export default function PaymentMethodScreen() {
     const { colors, isDark } = useTheme();
     const { userData } = useAuth();
     const router = useRouter();
-    const params = useLocalSearchParams();
-    const [selected, setSelected] = useState(params.selectedId || 'wallet');
+    const { selectedPayment, setSelectedPayment } = useCheckoutStore();
+    const [selected, setSelected] = useState(selectedPayment?.id || 'wallet');
 
     const balance = userData?.balance || 0;
 
@@ -27,7 +28,8 @@ export default function PaymentMethodScreen() {
 
     const handleContinue = () => {
         const method = PAYMENT_METHODS.find(m => m.id === selected);
-        router.push({ pathname: '/(main)/checkout', params: { selectedPayment: JSON.stringify(method) } });
+        setSelectedPayment(method);
+        router.push('/(main)/checkout');
     };
 
     return (

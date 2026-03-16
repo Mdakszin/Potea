@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import {
     View, Text, StyleSheet, TouchableOpacity,
-    FlatList, Image, ActivityIndicator
+    FlatList, Image, ActivityIndicator, Platform
 } from 'react-native';
 import { COLORS, TYPOGRAPHY, SPACING } from '../../../src/constants/theme';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -114,7 +114,26 @@ const styles = StyleSheet.create({
     tabText: { fontSize: 16, fontWeight: '600' },
     activeTabText: { color: COLORS.primary },
     list: { padding: SPACING.lg, paddingBottom: 100 },
-    orderCard: { flexDirection: 'row', borderRadius: 16, padding: SPACING.md, marginBottom: SPACING.md, elevation: 2, shadowOpacity: 0.1, shadowRadius: 4, shadowOffset: { width: 0, height: 2 } },
+    orderCard: { 
+        flexDirection: 'row', 
+        borderRadius: 16, 
+        padding: SPACING.md, 
+        marginBottom: SPACING.md, 
+        ...Platform.select({
+            ios: {
+                shadowColor: '#000',
+                shadowOpacity: 0.1,
+                shadowRadius: 4,
+                shadowOffset: { width: 0, height: 2 },
+            },
+            android: {
+                elevation: 2,
+            },
+            web: {
+                boxShadow: '0px 2px 4px rgba(0,0,0,0.1)',
+            }
+        })
+    },
     orderLeft: { marginRight: SPACING.md },
     orderImage: { width: 80, height: 80, borderRadius: 12 },
     orderMid: { flex: 1, justifyContent: 'center' },

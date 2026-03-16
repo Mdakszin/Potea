@@ -11,10 +11,22 @@ import {
 } from 'firebase/auth';
 import { doc, setDoc, getDoc, serverTimestamp, onSnapshot } from 'firebase/firestore';
 
-const AuthContext = createContext();
+const defaultAuthValue = {
+    currentUser: null,
+    userData: null,
+    loading: true,
+    register: () => Promise.resolve(),
+    login: () => Promise.resolve(),
+    loginWithGoogle: () => Promise.resolve(),
+    logout: () => Promise.resolve(),
+    setUserData: () => {}
+};
+
+const AuthContext = createContext(defaultAuthValue);
 
 export function useAuth() {
-    return useContext(AuthContext);
+    const context = useContext(AuthContext);
+    return context || defaultAuthValue;
 }
 
 export function AuthProvider({ children }) {

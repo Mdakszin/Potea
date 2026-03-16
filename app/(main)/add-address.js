@@ -1,94 +1,294 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, SafeAreaView, Alert } from 'react-native';
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, SafeAreaView, Alert, ScrollView, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { db } from '../../src/config/firebase';
 import { collection, addDoc, doc, updateDoc, query, where, getDocs, writeBatch } from 'firebase/firestore';
 import { useAuth } from '../../src/contexts/AuthContext';
-import { COLORS, SPACING, TYPOGRAPHY } from '../../src/constants/theme';
-import TextField from '../../src/components/TextField';
-import Checkbox from '../../src/components/Checkbox';
-import Button from '../../src/components/Button';
+import { COLORS, SPACING, TYPOGRAPHY, SHADOWS } from '../../src/constants/theme';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useTheme } from '../../src/contexts/ThemeContext';
+import Button from '../../src/components/Button';
+import useCheckoutStore from '../../src/store/useCheckoutStore';
 
 export default function AddAddressScreen() {
     const { colors } = useTheme();
     const { addressId, initialData: initialDataStr } = useLocalSearchParams();
     const initialData = initialDataStr ? JSON.parse(initialDataStr) : null;
     const { currentUser } = useAuth();
+    const { setSelectedAddress } = useCheckoutStore();
     const router = useRouter();
-
-    const [name, setName] = useState(initialData?.name || '');
-    const [address, setAddress] = useState(initialData?.address || initialData?.street || '');
-    const [isDefault, setIsDefault] = useState(initialData?.isDefault || false);
     const [loading, setLoading] = useState(false);
 
-    const handleSave = async () => {
-        if (!name || !address) { Alert.alert('Error', 'Please fill in all fields'); return; }
+    const goBack = () => {
+        if (router.canGoBack()) {
+            router.back();
+        } else {
+            router.replace('/(main)/home');
+        }
+    };
+
+    const [label, setLabel] = useState(initialData?.name || initialData?.label || '');
+    const [street, setStreet] = useState(initialData?.street || initialData?.address || '');
+    const [apt, setApt] = useState(initialData?.apt || '');
+    const [city, setCity] = useState(initialData?.city || '');
+    const [state, setState] = useState(initialData?.state || '');
+    const [postalCode, setPostalCode] = useState(initialData?.postalCode || '');
+    const [country, setCountry] = useState(initialData?.country || '');
+
+    const isFormValid = street.trim() && city.trim() && country.trim();
+
+    const saveAddress = async () => {
+        if (!isFormValid) {
+            Alert.alert('Missing Info', 'Please fill in at least the street, city, and country.');
+            return;
+        }
         setLoading(true);
         try {
-            const addressData = { name, address, isDefault, updatedAt: new Date().toISOString() };
             const addressesRef = collection(db, 'users', currentUser.uid, 'addresses');
-            if (isDefault) {
-                const q = query(addressesRef, where('isDefault', '==', true));
-                const querySnapshot = await getDocs(q);
-                const batch = writeBatch(db);
-                querySnapshot.forEach((document) => {
-                    if (document.id !== addressId) batch.update(document.ref, { isDefault: false });
-                });
-                await batch.commit();
+
+            // Unset any existing default
+            const q = query(addressesRef, where('isDefault', '==', true));
+            const querySnapshot = await getDocs(q);
+            const batch = writeBatch(db);
+            querySnapshot.forEach((document) => {
+                if (document.id !== addressId) batch.update(document.ref, { isDefault: false });
+            });
+            await batch.commit();
+
+            const fullAddress = [street, apt, city, state, postalCode, country].filter(Boolean).join(', ');
+
+            const addressData = {
+                name: label.trim() || 'Home',
+                address: fullAddress,
+                street: street.trim(),
+                apt: apt.trim(),
+                city: city.trim(),
+                state: state.trim(),
+                postalCode: postalCode.trim(),
+                country: country.trim(),
+                isDefault: true,
+                updatedAt: new Date().toISOString()
+            };
+
+            let savedAddressId = addressId;
+            if (addressId) {
+                await updateDoc(doc(db, 'users', currentUser.uid, 'addresses', addressId), addressData);
+            } else {
+                const docRef = await addDoc(addressesRef, { ...addressData, createdAt: new Date().toISOString() });
+                savedAddressId = docRef.id;
             }
-            if (addressId) await updateDoc(doc(db, 'users', currentUser.uid, 'addresses', addressId), addressData);
-            else await addDoc(addressesRef, { ...addressData, createdAt: new Date().toISOString() });
-            router.back();
+            setSelectedAddress({ id: savedAddressId, ...addressData });
+            goBack();
         } catch (error) {
-            console.error("Error saving address:", error);
-            Alert.alert("Error", "Failed to save address.");
+            console.error('Error saving address:', error);
+            Alert.alert('Error', 'Failed to save address. Please try again.');
         } finally {
             setLoading(false);
         }
     };
 
+    const renderInput = (iconName, placeholder, value, onChangeText, options = {}) => (
+        <View style={[styles.inputContainer, { backgroundColor: colors.card, borderColor: colors.border || COLORS.border }]}>
+            <Ionicons name={iconName} size={20} color={COLORS.primary} style={styles.inputIcon} />
+            <TextInput
+                style={[styles.input, { color: colors.text }]}
+                placeholder={placeholder}
+                placeholderTextColor={COLORS.textLight}
+                value={value}
+                onChangeText={onChangeText}
+                autoCapitalize={options.autoCapitalize || 'words'}
+                keyboardType={options.keyboardType || 'default'}
+                returnKeyType={options.returnKeyType || 'next'}
+            />
+        </View>
+    );
+
     return (
         <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
             <View style={styles.header}>
-                <TouchableOpacity onPress={() => router.back()}><Ionicons name="arrow-back" size={24} color={colors.text} /></TouchableOpacity>
-                <Text style={[styles.title, { color: colors.text }]}>{addressId ? 'Edit Address' : 'Add New Address'}</Text>
+                <TouchableOpacity onPress={goBack} style={styles.backBtn}>
+                    <Ionicons name="arrow-back" size={24} color={colors.text} />
+                </TouchableOpacity>
+                <Text style={[styles.title, { color: colors.text }]}>
+                    {addressId ? 'Edit Address' : 'Add New Address'}
+                </Text>
                 <View style={{ width: 40 }} />
             </View>
 
-            <ScrollView contentContainerStyle={styles.scrollContent}>
-                <View style={styles.mapContainer}>
-                    <View style={styles.mapBg}><Ionicons name="location" size={40} color={COLORS.primary} /><Text style={styles.mapText}>Map Preview</Text></View>
-                    <View style={styles.pinContainer}><View style={styles.pinCircle}><Ionicons name="location" size={24} color={COLORS.white} /></View><View style={styles.pinPointer} /></View>
-                </View>
+            <KeyboardAvoidingView
+                style={{ flex: 1 }}
+                behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+            >
+                <ScrollView
+                    style={styles.scrollView}
+                    contentContainerStyle={styles.scrollContent}
+                    showsVerticalScrollIndicator={false}
+                    keyboardShouldPersistTaps="handled"
+                >
+                    {/* Location Icon Header */}
+                    <View style={styles.iconHeader}>
+                        <View style={styles.locationBubble}>
+                            <Ionicons name="location" size={32} color={COLORS.white} />
+                        </View>
+                        <Text style={[styles.subtitle, { color: colors.textLight || COLORS.textLight }]}>
+                            Enter your shipping address details
+                        </Text>
+                    </View>
 
-                <View style={styles.form}>
-                    <Text style={[styles.sectionTitle, { color: colors.text }]}>Address Details</Text>
-                    <TextField label="Address Label" value={name} onChangeText={setName} placeholder="Home, Office, etc." />
-                    <TextField label="Full Address" value={address} onChangeText={setAddress} placeholder="Enter your full address" multiline numberOfLines={3} />
-                    <View style={styles.defaultRow}><Checkbox value={isDefault} onValueChange={setIsDefault} color={COLORS.primary} /><Text style={[styles.defaultLabel, { color: colors.text }]}>Make this as the default address</Text></View>
-                </View>
-            </ScrollView>
-            <View style={styles.footer}><Button title={loading ? "Saving..." : "Add"} onPress={handleSave} style={{ width: '100%' }} disabled={loading} /></View>
+                    {/* Label */}
+                    <Text style={[styles.sectionLabel, { color: colors.text }]}>Address Label</Text>
+                    {renderInput('bookmark-outline', 'e.g. Home, Work, Office', label, setLabel)}
+
+                    {/* Street */}
+                    <Text style={[styles.sectionLabel, { color: colors.text }]}>Street Address *</Text>
+                    {renderInput('location-outline', 'Street address', street, setStreet)}
+
+                    {/* Apt / Suite */}
+                    <Text style={[styles.sectionLabel, { color: colors.text }]}>Apt / Suite</Text>
+                    {renderInput('business-outline', 'Apt, Suite, Unit (optional)', apt, setApt)}
+
+                    {/* City */}
+                    <Text style={[styles.sectionLabel, { color: colors.text }]}>City *</Text>
+                    {renderInput('navigate-outline', 'City', city, setCity)}
+
+                    {/* State & Postal Code Row */}
+                    <View style={styles.row}>
+                        <View style={{ flex: 1, marginRight: SPACING.sm }}>
+                            <Text style={[styles.sectionLabel, { color: colors.text }]}>State / Province</Text>
+                            {renderInput('map-outline', 'State', state, setState)}
+                        </View>
+                        <View style={{ flex: 1, marginLeft: SPACING.sm }}>
+                            <Text style={[styles.sectionLabel, { color: colors.text }]}>Postal Code</Text>
+                            {renderInput('mail-outline', 'Zip code', postalCode, setPostalCode, { keyboardType: 'default' })}
+                        </View>
+                    </View>
+
+                    {/* Country */}
+                    <Text style={[styles.sectionLabel, { color: colors.text }]}>Country *</Text>
+                    {renderInput('globe-outline', 'Country', country, setCountry, { returnKeyType: 'done' })}
+
+                    {/* Default badge info */}
+                    <View style={styles.defaultInfo}>
+                        <Ionicons name="checkmark-circle" size={18} color={COLORS.primary} />
+                        <Text style={[styles.defaultInfoText, { color: colors.textLight || COLORS.textLight }]}>
+                            This address will be set as your default shipping address.
+                        </Text>
+                    </View>
+                </ScrollView>
+            </KeyboardAvoidingView>
+
+            {/* Save Button */}
+            <View style={styles.footer}>
+                <Button
+                    title={loading ? 'Saving...' : (addressId ? 'Update Address' : 'Save Address')}
+                    onPress={saveAddress}
+                    style={[
+                        styles.saveBtn,
+                        !isFormValid && styles.saveBtnDisabled,
+                    ]}
+                />
+            </View>
         </SafeAreaView>
     );
 }
 
 const styles = StyleSheet.create({
-    container: { flex: 1 },
-    header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: SPACING.lg },
-    title: { fontSize: 24, fontWeight: '700' },
-    scrollContent: { padding: SPACING.lg, paddingBottom: 100 },
-    mapContainer: { height: 200, borderRadius: 24, overflow: 'hidden', marginBottom: 24, position: 'relative' },
-    mapBg: { flex: 1, backgroundColor: '#E8F5E9', alignItems: 'center', justifyContent: 'center' },
-    mapText: { marginTop: 8, color: COLORS.primary, fontWeight: '600' },
-    pinContainer: { position: 'absolute', top: '50%', left: '50%', transform: [{ translateX: -15 }, { translateY: -30 }], alignItems: 'center' },
-    pinCircle: { width: 40, height: 40, borderRadius: 20, backgroundColor: COLORS.primary, alignItems: 'center', justifyContent: 'center', borderWidth: 3, borderColor: COLORS.white },
-    pinPointer: { width: 4, height: 10, backgroundColor: COLORS.primary, borderBottomLeftRadius: 2, borderBottomRightRadius: 2 },
-    form: { gap: 16 },
-    sectionTitle: { fontSize: 18, fontWeight: '700', marginBottom: 8 },
-    defaultRow: { flexDirection: 'row', alignItems: 'center', marginTop: 8, gap: 12 },
-    defaultLabel: { fontSize: 14, fontWeight: '600' },
-    footer: { padding: SPACING.lg, position: 'absolute', bottom: 0, left: 0, right: 0 },
+    container: {
+        flex: 1,
+    },
+    header: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        paddingHorizontal: SPACING.lg,
+        paddingVertical: SPACING.md,
+    },
+    backBtn: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    title: {
+        fontSize: 22,
+        fontWeight: '700',
+    },
+    scrollView: {
+        flex: 1,
+    },
+    scrollContent: {
+        paddingHorizontal: SPACING.lg,
+        paddingBottom: 120,
+    },
+    iconHeader: {
+        alignItems: 'center',
+        marginBottom: SPACING.lg,
+        marginTop: SPACING.sm,
+    },
+    locationBubble: {
+        width: 64,
+        height: 64,
+        borderRadius: 32,
+        backgroundColor: COLORS.primary,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginBottom: SPACING.sm,
+        ...SHADOWS.medium,
+    },
+    subtitle: {
+        fontSize: 14,
+        textAlign: 'center',
+    },
+    sectionLabel: {
+        fontSize: 14,
+        fontWeight: '600',
+        marginBottom: 6,
+        marginTop: SPACING.md,
+    },
+    inputContainer: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        borderRadius: 16,
+        borderWidth: 1,
+        paddingHorizontal: SPACING.md,
+        height: 52,
+        ...SHADOWS.small,
+    },
+    inputIcon: {
+        marginRight: SPACING.sm,
+    },
+    input: {
+        flex: 1,
+        fontSize: 15,
+        fontWeight: '400',
+    },
+    row: {
+        flexDirection: 'row',
+    },
+    defaultInfo: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginTop: SPACING.lg,
+        paddingHorizontal: SPACING.sm,
+        gap: 8,
+    },
+    defaultInfoText: {
+        fontSize: 13,
+        flex: 1,
+    },
+    footer: {
+        paddingHorizontal: SPACING.lg,
+        paddingVertical: SPACING.md,
+        position: 'absolute',
+        bottom: 0,
+        left: 0,
+        right: 0,
+    },
+    saveBtn: {
+        width: '100%',
+    },
+    saveBtnDisabled: {
+        opacity: 0.5,
+    },
 });

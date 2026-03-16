@@ -1,31 +1,47 @@
 import React from 'react';
-import { View, Text, StyleSheet, Image, TouchableOpacity, FlatList } from 'react-native';
+import { View, Text, StyleSheet, Image, TouchableOpacity, FlatList, ActivityIndicator, Platform } from 'react-native';
 import { COLORS, TYPOGRAPHY, SPACING } from '../../src/constants/theme';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '../../src/contexts/ThemeContext';
 import { useRouter } from 'expo-router';
-import { TRANSACTIONS } from '../../src/constants/data';
+import { usePurchases } from '../../src/hooks/usePurchases';
 
 export default function TransactionHistoryScreen() {
     const { colors } = useTheme();
     const router = useRouter();
+    const { transactions, loading } = usePurchases();
 
     const renderTransaction = ({ item }) => (
-        <TouchableOpacity style={[styles.transactionItem, { borderBottomColor: colors.border }]} onPress={() => router.push({ pathname: '/(main)/e-receipt', params: { transaction: JSON.stringify(item) } })}>
+        <TouchableOpacity 
+            style={[styles.transactionItem, { borderBottomColor: colors.border }]} 
+            onPress={() => router.push({ 
+                pathname: '/(main)/e-receipt', 
+                params: { 
+                    id: item.id,
+                    type: item.isTopUp ? 'topup' : 'order'
+                } 
+            })}
+        >
             <View style={[styles.iconContainer, { backgroundColor: colors.card }]}>
                 {item.isTopUp ? (
                     <View style={styles.topUpIcon}><Ionicons name="wallet-outline" size={24} color={COLORS.primary} /></View>
-                ) : <Image source={{ uri: item.icon }} style={styles.itemImage} />}
+                ) : (
+                    item.icon ? (
+                        <Image source={{ uri: item.icon }} style={styles.itemImage} />
+                    ) : (
+                        <View style={styles.topUpIcon}><Ionicons name="bag-handle-outline" size={24} color={COLORS.primary} /></View>
+                    )
+                )}
             </View>
             <View style={styles.itemInfo}>
                 <Text style={[styles.itemName, { color: colors.text }]}>{item.name}</Text>
-                <Text style={[styles.itemDate, { color: colors.textLight }]}>{item.date}</Text>
+                <Text style={[styles.itemDate, { color: colors.textLight }]}>{item.date || item.createdAt?.toDate()?.toLocaleDateString()}</Text>
             </View>
             <View style={styles.amountInfo}>
-                <Text style={[styles.amount, { color: colors.text }]}>${item.amount.toFixed(2)}</Text>
+                <Text style={[styles.amount, { color: colors.text }]}>${Number(item.amount).toFixed(2)}</Text>
                 <View style={styles.typeTag}>
-                    <Text style={[styles.typeText, { color: colors.textLight }]}>{item.type}</Text>
+                    <Text style={[styles.typeText, { color: colors.textLight }]}>{item.isTopUp ? 'Top Up' : 'Orders'}</Text>
                     <Ionicons name={item.isTopUp ? "arrow-up-circle" : "arrow-down-circle"} size={14} color={item.isTopUp ? "#2ECC71" : "#FF4C4C"} />
                 </View>
             </View>
@@ -39,7 +55,23 @@ export default function TransactionHistoryScreen() {
                 <Text style={[styles.headerTitle, { color: colors.text }]}>Transaction History</Text>
                 <TouchableOpacity><Ionicons name="search-outline" size={24} color={colors.text} /></TouchableOpacity>
             </View>
-            <FlatList data={TRANSACTIONS} keyExtractor={item => item.id} renderItem={renderTransaction} contentContainerStyle={styles.list} />
+            {loading ? (
+                <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+                    <ActivityIndicator size="large" color={COLORS.primary} />
+                </View>
+            ) : (
+                <FlatList 
+                    data={transactions} 
+                    keyExtractor={item => item.id} 
+                    renderItem={renderTransaction} 
+                    contentContainerStyle={styles.list} 
+                    ListEmptyComponent={
+                        <View style={{ flex: 1, alignItems: 'center', marginTop: 50 }}>
+                            <Text style={{ color: colors.textLight }}>No transactions found</Text>
+                        </View>
+                    }
+                />
+            )}
         </SafeAreaView>
     );
 }

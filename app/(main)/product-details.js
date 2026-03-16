@@ -79,10 +79,10 @@ export default function ProductDetailScreen() {
                 await setDoc(cartItemRef, { id: plant.id, name: plant.name, price: plant.price, image: plant.image, qty: quantity, size: selectedSize, createdAt: new Date() });
             }
             if (navigate) router.push('/(main)/cart');
-            else Alert.alert('Success', 'Added to cart!');
+            else Alert.alert('Added!', `${plant.name} has been added to your cart.`);
         } catch (error) {
             console.error('Error adding to cart:', error);
-            Alert.alert('Error', 'Could not add to cart.');
+            Alert.alert('Error', `Could not add to cart. ${error.message || ''}`);
         }
     };
 

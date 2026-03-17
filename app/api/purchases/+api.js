@@ -9,12 +9,15 @@ export async function GET(request) {
       return Response.json({ error: 'User ID is required' }, { status: 400 });
     }
 
-    // In a real app, you would verify the user session here.
-    // For this implementation, we'll fetch charges from Stripe.
-    // Note: Stripe charges don't directly have a 'userId' field unless passed in metadata.
-    // We'll search for charges where the description contains the userId.
+    const limit = searchParams.get('limit') || '10';
+    const startingAfter = searchParams.get('starting_after');
+
+    let stripeUrl = `https://api.stripe.com/v1/charges?limit=${limit}`;
+    if (startingAfter) {
+      stripeUrl += `&starting_after=${startingAfter}`;
+    }
     
-    const response = await fetch(`https://api.stripe.com/v1/charges?limit=100`, {
+    const response = await fetch(stripeUrl, {
       method: 'GET',
       headers: {
         'Authorization': `Bearer ${STRIPE_SECRET_KEY}`,
@@ -42,7 +45,9 @@ export async function GET(request) {
         date: new Date(charge.created * 1000).toISOString(),
         description: charge.description,
         receipt_url: charge.receipt_url
-      }))
+      })),
+      has_more: data.has_more,
+      last_id: data.data.length > 0 ? data.data[data.data.length - 1].id : null
     });
   } catch (error) {
     console.error('Stripe API Error:', error);

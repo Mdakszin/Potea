@@ -10,7 +10,7 @@ import { usePurchases } from '../../src/hooks/usePurchases';
 export default function TransactionHistoryScreen() {
     const { colors } = useTheme();
     const router = useRouter();
-    const { transactions, loading } = usePurchases();
+    const { transactions, loading, loadingMore, hasMore, loadMore } = usePurchases();
 
     const renderTransaction = ({ item }) => (
         <TouchableOpacity 
@@ -36,7 +36,7 @@ export default function TransactionHistoryScreen() {
             </View>
             <View style={styles.itemInfo}>
                 <Text style={[styles.itemName, { color: colors.text }]}>{item.name}</Text>
-                <Text style={[styles.itemDate, { color: colors.textLight }]}>{item.date || item.createdAt?.toDate()?.toLocaleDateString()}</Text>
+                <Text style={[styles.itemDate, { color: colors.textLight }]}>{item.date || (item.createdAt?.toDate ? item.createdAt.toDate().toLocaleDateString() : 'N/A')}</Text>
             </View>
             <View style={styles.amountInfo}>
                 <Text style={[styles.amount, { color: colors.text }]}>${Number(item.amount).toFixed(2)}</Text>
@@ -47,6 +47,15 @@ export default function TransactionHistoryScreen() {
             </View>
         </TouchableOpacity>
     );
+
+    const renderFooter = () => {
+        if (!loadingMore) return <View style={{ height: 20 }} />;
+        return (
+            <View style={{ paddingVertical: 20 }}>
+                <ActivityIndicator size="small" color={COLORS.primary} />
+            </View>
+        );
+    };
 
     return (
         <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
@@ -65,6 +74,9 @@ export default function TransactionHistoryScreen() {
                     keyExtractor={item => item.id} 
                     renderItem={renderTransaction} 
                     contentContainerStyle={styles.list} 
+                    onEndReached={loadMore}
+                    onEndReachedThreshold={0.5}
+                    ListFooterComponent={renderFooter}
                     ListEmptyComponent={
                         <View style={{ flex: 1, alignItems: 'center', marginTop: 50 }}>
                             <Text style={{ color: colors.textLight }}>No transactions found</Text>

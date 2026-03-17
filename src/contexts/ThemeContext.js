@@ -1,12 +1,6 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { Platform } from 'react-native';
 
-const ThemeContext = createContext();
-
-export function useTheme() {
-    return useContext(ThemeContext);
-}
-
 // ─── Light Palette ───
 const LIGHT = {
     primary: '#01B763',
@@ -40,6 +34,24 @@ const DARK = {
     tabBar: '#1A1A1A',
     inputBg: '#2A2A2A',
 };
+
+const ThemeContext = createContext({
+    isDark: false,
+    colors: LIGHT,
+    toggleTheme: () => {},
+});
+
+export function useTheme() {
+    const context = useContext(ThemeContext);
+    if (!context) {
+        return {
+            isDark: false,
+            colors: LIGHT,
+            toggleTheme: () => {},
+        };
+    }
+    return context;
+}
 
 export function ThemeProvider({ children }) {
     const [isDark, setIsDark] = useState(false);

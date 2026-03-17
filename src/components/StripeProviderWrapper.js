@@ -1,7 +1,13 @@
-import { Platform } from 'react-native';
-import NativeWrapper from './StripeProviderWrapper.native';
-import WebWrapper from './StripeProviderWrapper.web';
+import React from 'react';
 
-const StripeProviderWrapper = Platform.OS === 'web' ? WebWrapper : NativeWrapper;
+// Mock/Web-safe version of StripeProvider to avoid native module resolution errors on Web.
+// To fully support Stripe on Web, we would integrate @stripe/stripe-js here.
+const StripeProviderWrapper = ({ children, publishableKey }) => {
+  return (
+    <>
+      {children}
+    </>
+  );
+};
 
 export default StripeProviderWrapper;

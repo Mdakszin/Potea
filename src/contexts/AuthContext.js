@@ -7,9 +7,15 @@ import {
     onAuthStateChanged,
     updateProfile,
     GoogleAuthProvider,
-    signInWithPopup
+    signInWithPopup,
+    signInWithCredential
 } from 'firebase/auth';
-import { doc, setDoc, getDoc, serverTimestamp, onSnapshot } from 'firebase/firestore';
+import { doc, setDoc, getDoc, onSnapshot } from 'firebase/firestore';
+import * as Google from 'expo-auth-session/providers/google';
+import * as WebBrowser from 'expo-web-browser';
+import { Platform } from 'react-native';
+
+WebBrowser.maybeCompleteAuthSession();
 
 const defaultAuthValue = {
     currentUser: null,
@@ -34,26 +40,58 @@ export function AuthProvider({ children }) {
     const [userData, setUserData] = useState(null);
     const [loading, setLoading] = useState(true);
 
+    // Google Auth Request for Native
+    const [request, response, promptAsync] = Google.useAuthRequest({
+        iosClientId: process.env.EXPO_PUBLIC_IOS_CLIENT_ID,
+        androidClientId: process.env.EXPO_PUBLIC_ANDROID_CLIENT_ID,
+        webClientId: process.env.EXPO_PUBLIC_WEB_CLIENT_ID,
+    });
+
+    useEffect(() => {
+        if (response?.type === 'success') {
+            const { id_token } = response.params;
+            const credential = GoogleAuthProvider.credential(id_token);
+            signInWithCredential(auth, credential)
+                .then((result) => {
+                    handleUserDocument(result.user);
+                })
+                .catch((error) => {
+                    console.error('Firebase Google Sign-In error:', error);
+                });
+        }
+    }, [response]);
+
+    async function handleUserDocument(user) {
+        const userRef = doc(db, 'users', user.uid);
+        const docSnap = await getDoc(userRef);
+
+        if (!docSnap.exists()) {
+            await setDoc(userRef, {
+                uid: user.uid,
+                email: user.email,
+                name: user.displayName || '',
+                avatar: user.photoURL || null,
+                phone: user.phoneNumber || '',
+                dob: '',
+                createdAt: new Date().toISOString(),
+            });
+        }
+    }
+
     async function register(email, password, name) {
         try {
             const userCredential = await createUserWithEmailAndPassword(auth, email, password);
             const user = userCredential.user;
-
-            // Set displayName on Firebase Auth profile immediately
             await updateProfile(user, { displayName: name });
-
-            // Create a user document in Firestore
             await setDoc(doc(db, 'users', user.uid), {
                 uid: user.uid,
                 email: email,
                 name: name,
                 createdAt: new Date().toISOString(),
-                // Default placeholder data
                 avatar: null,
                 phone: '',
                 dob: ''
             });
-
             return user;
         } catch (error) {
             throw error;
@@ -65,31 +103,19 @@ export function AuthProvider({ children }) {
     }
 
     async function loginWithGoogle() {
-        try {
-            const provider = new GoogleAuthProvider();
-            const result = await signInWithPopup(auth, provider);
-            const user = result.user;
-
-            // Create or merge user document in Firestore
-            const userRef = doc(db, 'users', user.uid);
-            const docSnap = await getDoc(userRef);
-
-            if (!docSnap.exists()) {
-                await setDoc(userRef, {
-                    uid: user.uid,
-                    email: user.email,
-                    name: user.displayName || '',
-                    avatar: user.photoURL || null,
-                    phone: user.phoneNumber || '',
-                    dob: '',
-                    createdAt: new Date().toISOString(),
-                });
+        if (Platform.OS === 'web') {
+            try {
+                const provider = new GoogleAuthProvider();
+                const result = await signInWithPopup(auth, provider);
+                await handleUserDocument(result.user);
+                return result.user;
+            } catch (error) {
+                console.error('Web Google Sign-In error:', error);
+                throw error;
             }
-
-            return user;
-        } catch (error) {
-            console.error('Google Sign-In error:', error);
-            throw error;
+        } else {
+            // For Native, trigger promptAsync
+            return promptAsync();
         }
     }
 
@@ -103,7 +129,6 @@ export function AuthProvider({ children }) {
         const unsubscribe = onAuthStateChanged(auth, async (user) => {
             setCurrentUser(user);
 
-            // Clean up old listener
             if (userUnsubscribe) {
                 userUnsubscribe();
                 userUnsubscribe = null;
@@ -111,7 +136,6 @@ export function AuthProvider({ children }) {
 
             if (user) {
                 const docRef = doc(db, 'users', user.uid);
-                // Real-time listener for user details & favorites
                 userUnsubscribe = onSnapshot(docRef, (docSnap) => {
                     if (docSnap.exists()) {
                         setUserData(docSnap.data());

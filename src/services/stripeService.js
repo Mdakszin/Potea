@@ -13,10 +13,14 @@ const getBaseUrl = () => {
 };
 
 export const stripeService = {
-  fetchUserPurchases: async (userId) => {
+  fetchUserPurchases: async (userId, limit = 10, startingAfter = null) => {
     try {
+      let url = `/api/purchases?userId=${userId}&limit=${limit}`;
+      if (startingAfter) {
+        url += `&starting_after=${startingAfter}`;
+      }
       // Using relative path for API routes
-      const response = await fetch(`/api/purchases?userId=${userId}`);
+      const response = await fetch(url);
       if (!response.ok) {
         throw new Error('Failed to fetch purchases from server');
       }

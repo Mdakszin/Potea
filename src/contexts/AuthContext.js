@@ -41,10 +41,11 @@ export function AuthProvider({ children }) {
     const [loading, setLoading] = useState(true);
 
     // Google Auth Request for Native
+    // Note: webClientId is required by the hook on Web platform even if we use signInWithPopup
     const [request, response, promptAsync] = Google.useAuthRequest({
         iosClientId: process.env.EXPO_PUBLIC_IOS_CLIENT_ID,
         androidClientId: process.env.EXPO_PUBLIC_ANDROID_CLIENT_ID,
-        webClientId: process.env.EXPO_PUBLIC_WEB_CLIENT_ID,
+        webClientId: process.env.EXPO_PUBLIC_WEB_CLIENT_ID || 'web-client-id-placeholder',
     });
 
     useEffect(() => {

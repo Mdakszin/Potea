@@ -49,7 +49,7 @@ export default function OrderSuccessScreen() {
 
     return (
         <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
-            <View style={styles.confettiContainer} pointerEvents="none">{CONFETTI.map((c, i) => <ConfettiDot key={i} {...c} />)}</View>
+            <View style={[styles.confettiContainer, { pointerEvents: 'none' }]}>{CONFETTI.map((c, i) => <ConfettiDot key={i} {...c} />)}</View>
             <View style={styles.content}>
                 <Animated.View style={[styles.iconCircle, { transform: [{ scale: scaleAnim }] }]}><Ionicons name="checkmark" size={70} color={COLORS.white} /></Animated.View>
                 <Text style={[styles.title, { color: colors.text }]}>Order Placed!</Text>

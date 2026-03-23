@@ -53,35 +53,50 @@ export const SPACING = {
     xxl: 48
 };
 
-export const SHADOWS = {
-    small: {
-        shadowColor: "#000",
-        shadowOffset: {
-            width: 0,
-            height: 2,
+import { Platform } from 'react-native';
+
+export const SHADOWS = Platform.select({
+    web: {
+        small: {
+            boxShadow: '0px 2px 3.84px rgba(0,0,0,0.1)',
         },
-        shadowOpacity: 0.1,
-        shadowRadius: 3.84,
-        elevation: 2,
+        medium: {
+            boxShadow: '0px 4px 5.46px rgba(0,0,0,0.15)',
+        },
+        large: {
+            boxShadow: '0px 10px 10px rgba(0,0,0,0.2)',
+        }
     },
-    medium: {
-        shadowColor: "#000",
-        shadowOffset: {
-            width: 0,
-            height: 4,
+    default: {
+        small: {
+            shadowColor: "#000",
+            shadowOffset: {
+                width: 0,
+                height: 2,
+            },
+            shadowOpacity: 0.1,
+            shadowRadius: 3.84,
+            elevation: 2,
         },
-        shadowOpacity: 0.15,
-        shadowRadius: 5.46,
-        elevation: 5,
-    },
-    large: {
-        shadowColor: "#000",
-        shadowOffset: {
-            width: 0,
-            height: 10,
+        medium: {
+            shadowColor: "#000",
+            shadowOffset: {
+                width: 0,
+                height: 4,
+            },
+            shadowOpacity: 0.15,
+            shadowRadius: 5.46,
+            elevation: 5,
         },
-        shadowOpacity: 0.2,
-        shadowRadius: 10,
-        elevation: 10,
+        large: {
+            shadowColor: "#000",
+            shadowOffset: {
+                width: 0,
+                height: 10,
+            },
+            shadowOpacity: 0.2,
+            shadowRadius: 10,
+            elevation: 10,
+        }
     }
-};
+});

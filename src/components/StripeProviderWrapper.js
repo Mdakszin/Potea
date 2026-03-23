@@ -1,12 +1,22 @@
-import React from 'react';
+import React, { useMemo } from 'react';
+import { loadStripe } from '@stripe/stripe-js';
+import { Elements } from '@stripe/react-stripe-js';
 
-// Mock/Web-safe version of StripeProvider to avoid native module resolution errors on Web.
-// To fully support Stripe on Web, we would integrate @stripe/stripe-js here.
+// Full Stripe support on Web using @stripe/stripe-js and @stripe/react-stripe-js.
 const StripeProviderWrapper = ({ children, publishableKey }) => {
+  const stripePromise = useMemo(() => {
+    if (!publishableKey) return null;
+    return loadStripe(publishableKey);
+  }, [publishableKey]);
+
+  if (!stripePromise) {
+    return <>{children}</>;
+  }
+
   return (
-    <>
+    <Elements stripe={stripePromise}>
       {children}
-    </>
+    </Elements>
   );
 };
 

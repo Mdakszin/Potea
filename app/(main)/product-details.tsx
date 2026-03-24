@@ -132,6 +132,13 @@ export default function ProductDetailScreen() {
 
                     <View style={styles.imageContainer}>
                         <Image source={{ uri: plant.image }} style={styles.image} resizeMode="cover" />
+                        <TouchableOpacity 
+                            style={styles.arButton}
+                            onPress={() => router.push({ pathname: '/(main)/ar-preview', params: { imageUri: plant.image } })}
+                        >
+                            <Ionicons name="cube-outline" size={24} color={COLORS.primary} />
+                            <Text style={styles.arButtonText}>View in AR</Text>
+                        </TouchableOpacity>
                     </View>
 
                     <View style={[styles.detailsContainer, { backgroundColor: colors.background }]}>
@@ -241,4 +248,6 @@ const styles = StyleSheet.create({
     centered: { flex: 1, justifyContent: 'center', alignItems: 'center' },
     reviewsSection: { marginTop: 10 },
     reviewHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 },
+    arButton: { position: 'absolute', bottom: 16, right: 16, backgroundColor: 'rgba(255,255,255,0.95)', flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 10, borderRadius: 20, gap: 8, elevation: 4, shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4 },
+    arButtonText: { color: COLORS.primary, fontWeight: '700', fontSize: 13 },
 });

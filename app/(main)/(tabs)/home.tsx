@@ -167,6 +167,19 @@ export default function HomeScreen() {
                         ))}
                     </View>
 
+                    <TouchableOpacity 
+                        style={[styles.aiBanner, { backgroundColor: COLORS.primaryLight + '20', borderColor: COLORS.primary }]}
+                        onPress={() => router.push('/(main)/plant-doctor')}
+                    >
+                        <View style={styles.aiBannerText}>
+                            <Text style={[styles.aiBannerTitle, { color: COLORS.primary }]}>🌿 AI Plant Doctor</Text>
+                            <Text style={[styles.aiBannerSub, { color: colors.text }]}>Take a photo to diagnose sick plants</Text>
+                        </View>
+                        <View style={styles.aiBannerIcon}>
+                            <Ionicons name="camera" size={24} color={COLORS.white} />
+                        </View>
+                    </TouchableOpacity>
+
                     <View style={styles.sectionHeader}>
                         <Text style={[styles.sectionTitle, { color: colors.text }]}>Category</Text>
                         <TouchableOpacity><Text style={[styles.seeAll, { color: colors.primary }]}>See All</Text></TouchableOpacity>
@@ -257,4 +270,9 @@ const styles = StyleSheet.create({
     columnWrapper: { gap: SPACING.md, marginBottom: SPACING.md },
     emptyContainer: { alignItems: 'center', paddingVertical: 40 },
     emptyText: { fontSize: 16, color: COLORS.textLight, marginTop: 12 },
+    aiBanner: { flexDirection: 'row', alignItems: 'center', marginHorizontal: SPACING.lg, marginBottom: SPACING.lg, padding: SPACING.md, borderRadius: 16, borderWidth: 1 },
+    aiBannerText: { flex: 1 },
+    aiBannerTitle: { fontSize: 16, fontWeight: '800', marginBottom: 4 },
+    aiBannerSub: { fontSize: 13, opacity: 0.8 },
+    aiBannerIcon: { width: 44, height: 44, borderRadius: 22, backgroundColor: COLORS.primary, alignItems: 'center', justifyContent: 'center' },
 });

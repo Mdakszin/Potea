@@ -53,7 +53,7 @@ export default function EditProfileScreen() {
         try {
             setUploadingAvatar(true);
             const manipulatedImage = await ImageManipulator.manipulateAsync(localUri, [{ resize: { width: 500, height: 500 } }], { compress: 0.7, format: ImageManipulator.SaveFormat.JPEG });
-            const base64 = await FileSystem.readAsStringAsync(manipulatedImage.uri, { encoding: FileSystem.EncodingType.Base64 });
+            const base64 = await FileSystem.readAsStringAsync(manipulatedImage.uri, { encoding: 'base64' as any });
             const base64Data = `data:image/jpeg;base64,${base64}`;
             const userRef = doc(db, 'users', currentUser.uid);
             await updateDoc(userRef, { avatar: base64Data });
@@ -130,7 +130,7 @@ const styles = StyleSheet.create({
     avatarWrapper: { position: 'relative' },
     avatar: { width: 120, height: 120, borderRadius: 60 },
     avatarPlaceholder: { width: 120, height: 120, borderRadius: 60, justifyContent: 'center', alignItems: 'center' },
-    editBadge: { position: 'absolute', bottom: 0, right: 0, width: 32, height: 32, borderRadius: 16, backgroundColor: COLORS.primary, borderUnits: 'pixel' as any, borderWidth: 2, borderColor: COLORS.white, justifyContent: 'center', alignItems: 'center' },
+    editBadge: { position: 'absolute', bottom: 0, right: 0, width: 32, height: 32, borderRadius: 16, backgroundColor: COLORS.primary, borderWidth: 2, borderColor: COLORS.white, justifyContent: 'center', alignItems: 'center' },
     uploadOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.3)', borderRadius: 60, justifyContent: 'center', alignItems: 'center' },
     form: { gap: 16 },
     footer: { padding: SPACING.lg },

@@ -48,7 +48,7 @@ export default function OTPVerificationScreen() {
     const { method } = useLocalSearchParams();
     const [otp, setOtp] = useState('');
     const [seconds, setSeconds] = useState(RESEND_SECONDS);
-    const timerRef = useRef<NodeJS.Timeout | null>(null);
+    const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
     const router = useRouter();
 
     useEffect(() => {

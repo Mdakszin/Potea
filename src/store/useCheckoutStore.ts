@@ -12,13 +12,13 @@ export interface ShippingMethod {
 export interface PaymentMethod {
     id: string;
     label: string;
-    method: 'wallet' | 'card' | 'paypal' | 'google-pay';
+    method: 'wallet' | 'card' | 'paypal' | 'google-pay' | 'google' | 'apple';
     icon: string;
 }
 
 export interface PromoCode {
     code: string;
-    discount: number;
+    value: number;
     type: 'percentage' | 'fixed';
 }
 

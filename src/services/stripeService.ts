@@ -3,16 +3,15 @@ export interface StripePurchase {
   amount: number;
   currency: string;
   status: string;
-  created: number;
+  date: string;
   description?: string;
   receipt_url?: string;
-  metadata?: Record<string, any>;
 }
 
 export interface StripePurchasesResponse {
-  data: StripePurchase[];
+  purchases: StripePurchase[];
   has_more: boolean;
-  total_count?: number;
+  last_id: string | null;
 }
 
 export const stripeService = {
@@ -26,7 +25,6 @@ export const stripeService = {
       if (startingAfter) {
         url += `&starting_after=${startingAfter}`;
       }
-      // Using relative path for API routes
       const response = await fetch(url);
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));

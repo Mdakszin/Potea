@@ -4,7 +4,7 @@ import { COLORS, TYPOGRAPHY, SPACING, SHADOWS } from '../constants/theme';
 
 interface ButtonProps {
     title: string;
-    onPress: () => void;
+    onPress?: () => void;
     variant?: 'primary' | 'outline' | 'social';
     icon?: ReactNode;
     style?: StyleProp<ViewStyle>;

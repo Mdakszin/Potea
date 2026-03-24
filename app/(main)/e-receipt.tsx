@@ -51,17 +51,17 @@ export default function EReceiptScreen() {
                     });
                 } else if (id && typeof id === 'string') {
                     if (type === 'topup') {
-                        const trans = await getTransactionDetails(id);
-                        if (trans) setData({ ...trans, amount: trans.amount, date: trans.createdAt?.toDate()?.toLocaleString() || new Date().toLocaleString() });
+                        const trans = await getTransactionDetails(id) as any;
+                        if (trans) setData({ ...trans, amount: trans.amount, date: trans.createdAt?.toDate?.()?.toLocaleString() || new Date().toLocaleString() } as ReceiptData);
                     } else {
-                        const order = await getOrderDetails(id);
+                        const order = await getOrderDetails(id) as any;
                         if (order) {
                             setData({
                                 ...order,
                                 isOrder: true,
                                 amount: order.total,
-                                date: order.createdAt?.toDate()?.toLocaleString() || new Date().toLocaleString()
-                            });
+                                date: order.createdAt?.toDate?.()?.toLocaleString() || new Date().toLocaleString()
+                            } as ReceiptData);
                         }
                     }
                 }

@@ -24,6 +24,9 @@ interface Review {
     rating: number;
     comment: string;
     createdAt?: Timestamp;
+    userName?: string;
+    userAvatar?: string;
+    date?: string;
 }
 
 export default function ProductDetailScreen() {
@@ -37,7 +40,7 @@ export default function ProductDetailScreen() {
     
     if (!plant) return <View style={styles.centered}><Text>Plant not found</Text></View>;
 
-    const [selectedSize, setSelectedSize] = useState(plant.sizes[0]);
+    const [selectedSize, setSelectedSize] = useState(plant.sizes?.[0] || 'Standard');
     const [quantity, setQuantity] = useState(1);
     const [isFav, setIsFav] = useState(false);
     const [reviews, setReviews] = useState<Review[]>([]);
@@ -149,7 +152,7 @@ export default function ProductDetailScreen() {
                         <View style={styles.sizeSection}>
                             <Text style={[styles.sectionTitle, { color: colors.text }]}>Size</Text>
                             <View style={styles.sizeOptions}>
-                                {plant.sizes.map(size => (
+                                {plant.sizes?.map(size => (
                                     <TouchableOpacity 
                                         key={size} 
                                         style={[
@@ -188,7 +191,7 @@ export default function ProductDetailScreen() {
                                     </TouchableOpacity>
                                 </View>
                                 {reviews.slice(0, 2).map((review) => (
-                                    <ReviewCard key={review.id} review={review} />
+                                    <ReviewCard key={review.id} review={review as any} />
                                 ))}
                             </View>
                         )}

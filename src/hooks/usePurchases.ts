@@ -51,12 +51,13 @@ export const usePurchases = () => {
             const firestoreSnap = await getDocs(firestoreQ);
             
             const firestoreData: CombinedTransaction[] = firestoreSnap.docs.map(doc => ({
-                id: doc.id,
                 ...doc.data(),
+                id: doc.id,
                 name: (doc.data() as any).name || 'Transaction',
                 amount: (doc.data() as any).amount || 0,
                 isTopUp: (doc.data() as any).isTopUp || false,
-                source: 'firestore'
+                source: 'firestore',
+                createdAt: (doc.data() as any).createdAt || new Date()
             }));
             
             setLastFirestoreDoc(firestoreSnap.docs[firestoreSnap.docs.length - 1] || null);
@@ -114,12 +115,13 @@ export const usePurchases = () => {
                 );
                 const nextSnap = await getDocs(nextQ);
                 nextFirestoreData = nextSnap.docs.map(doc => ({
-                    id: doc.id,
                     ...doc.data(),
+                    id: doc.id,
                     name: (doc.data() as any).name || 'Transaction',
                     amount: (doc.data() as any).amount || 0,
                     isTopUp: (doc.data() as any).isTopUp || false,
-                    source: 'firestore'
+                    source: 'firestore',
+                    createdAt: (doc.data() as any).createdAt || new Date()
                 }));
                 setLastFirestoreDoc(nextSnap.docs[nextSnap.docs.length - 1] || null);
             }

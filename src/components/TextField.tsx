@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { View, TextInput, StyleSheet, TouchableOpacity, ViewStyle, StyleProp, KeyboardTypeOptions } from 'react-native';
+import { View, Text, TextInput, StyleSheet, TouchableOpacity, ViewStyle, StyleProp, KeyboardTypeOptions, TextInputProps } from 'react-native';
 import { COLORS, TYPOGRAPHY, SPACING } from '../constants/theme';
 import { Ionicons } from '@expo/vector-icons';
 
-interface TextFieldProps {
+export interface TextFieldProps {
     icon?: keyof typeof Ionicons.glyphMap;
     placeholder?: string;
     value: string;
@@ -11,6 +11,9 @@ interface TextFieldProps {
     secureTextEntry?: boolean;
     style?: StyleProp<ViewStyle>;
     keyboardType?: KeyboardTypeOptions;
+    label?: string;
+    autoCapitalize?: TextInputProps['autoCapitalize'];
+    multiline?: boolean;
 }
 
 const TextField: React.FC<TextFieldProps> = ({
@@ -20,17 +23,21 @@ const TextField: React.FC<TextFieldProps> = ({
     onChangeText,
     secureTextEntry,
     style,
-    keyboardType = 'default'
+    keyboardType = 'default',
+    label,
+    autoCapitalize,
+    multiline
 }) => {
     const [isFocused, setIsFocused] = useState(false);
     const [isPasswordVisible, setIsPasswordVisible] = useState(false);
 
     return (
-        <View style={[
-            styles.container,
-            isFocused && styles.focusedContainer,
-            style
-        ]}>
+        <View style={style}>
+            {label && <Text style={styles.label}>{label}</Text>}
+            <View style={[
+                styles.container,
+                isFocused && styles.focusedContainer,
+            ]}>
             {icon && (
                 <Ionicons
                     name={icon as any}
@@ -41,7 +48,7 @@ const TextField: React.FC<TextFieldProps> = ({
             )}
             <TextInput
                 style={styles.input}
-                placeholder={placeholder}
+                placeholder={placeholder || label}
                 placeholderTextColor={COLORS.textLight}
                 value={value}
                 onChangeText={onChangeText}
@@ -49,6 +56,8 @@ const TextField: React.FC<TextFieldProps> = ({
                 onFocus={() => setIsFocused(true)}
                 onBlur={() => setIsFocused(false)}
                 keyboardType={keyboardType}
+                autoCapitalize={autoCapitalize}
+                multiline={multiline}
             />
             {secureTextEntry && (
                 <TouchableOpacity
@@ -62,6 +71,7 @@ const TextField: React.FC<TextFieldProps> = ({
                     />
                 </TouchableOpacity>
             )}
+            </View>
         </View>
     );
 };
@@ -92,7 +102,13 @@ const styles = StyleSheet.create({
     },
     eyeIcon: {
         padding: SPACING.xs,
-    }
+    },
+    label: {
+        fontSize: 14,
+        fontWeight: '600' as const,
+        color: COLORS.text,
+        marginBottom: 8,
+    },
 });
 
 export default TextField;

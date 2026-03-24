@@ -116,12 +116,12 @@ export default function ExploreScreen() {
             <FilterModal
                 visible={showFilter}
                 onClose={() => setShowFilter(false)}
-                activeCategory={activeCategory}
-                setActiveCategory={setActiveCategory}
-                activeSort={activeSort}
-                setActiveSort={setActiveSort}
-                activeRating={activeRating}
-                setActiveRating={setActiveRating}
+                onApply={(filters) => {
+                    setActiveCategory(filters.activeCategory);
+                    setActiveSort(filters.activeSort);
+                    setActiveRating(filters.activeRating);
+                    setShowFilter(false);
+                }}
             />
         </SafeAreaView>
     );

@@ -7,7 +7,6 @@ import {
     onAuthStateChanged,
     updateProfile,
     GoogleAuthProvider,
-    signInWithPopup,
     signInWithCredential,
     User,
     UserCredential
@@ -122,6 +121,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
         if (Platform.OS === 'web') {
             try {
                 const provider = new GoogleAuthProvider();
+                // signInWithPopup is web-only and not exported from the RN Firebase auth types.
+                // eslint-disable-next-line @typescript-eslint/no-var-requires
+                const { signInWithPopup } = require('firebase/auth') as any;
                 const result = await signInWithPopup(auth, provider);
                 await handleUserDocument(result.user);
                 return result.user;

@@ -9,7 +9,7 @@ interface StripeProviderWrapperProps {
 const StripeProviderWrapper: React.FC<StripeProviderWrapperProps> = ({ children, publishableKey }) => {
   return (
     <StripeProvider publishableKey={publishableKey}>
-      {children}
+      {children as any}
     </StripeProvider>
   );
 };

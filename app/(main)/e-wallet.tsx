@@ -74,7 +74,9 @@ export default function EWalletScreen() {
         <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
             <View style={styles.header}>
                 <View style={styles.headerLeft}>
-                    <Ionicons name="leaf" size={28} color={COLORS.primary} />
+                    <TouchableOpacity onPress={() => router.back()} style={{ marginRight: 8 }}>
+                        <Ionicons name="arrow-back" size={24} color={colors.text} />
+                    </TouchableOpacity>
                     <Text style={[styles.headerTitle, { color: colors.text }]}>My E-Wallet</Text>
                 </View>
                 <TouchableOpacity style={styles.headerBtn}>

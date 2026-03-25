@@ -33,7 +33,7 @@ export default function PlantDoctorScreen() {
         try {
             let result;
             const options: ImagePicker.ImagePickerOptions = {
-                mediaTypes: ImagePicker.MediaTypeOptions.Images,
+                mediaTypes: ['images'] as any,
                 allowsEditing: true,
                 aspect: [4, 5],
                 quality: 0.8,

@@ -59,3 +59,25 @@ export interface Transaction {
     icon: string | null;
     isTopUp: boolean;
 }
+
+export type OrderStatus = 'placed' | 'processing' | 'shipping' | 'delivered' | 'completed' | 'cancelled';
+
+export interface OrderItem {
+    id: string;
+    name: string;
+    image: string;
+    qty: number;
+    price: number;
+}
+
+export interface Order {
+    id: string;
+    userId: string;
+    items: OrderItem[];
+    total: number;
+    status: OrderStatus;
+    shippingMethod: string;
+    createdAt: any; // Firestore Timestamp
+    updatedAt?: any;
+}
+

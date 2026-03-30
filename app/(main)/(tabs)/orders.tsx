@@ -11,24 +11,9 @@ import { collection, query, where, orderBy, onSnapshot } from 'firebase/firestor
 import { useAuth } from '../../../src/contexts/AuthContext';
 import { useTheme } from '../../../src/contexts/ThemeContext';
 import { useRouter } from 'expo-router';
+import { Order, OrderStatus } from '../../../src/types';
 
-interface OrderItem {
-    id: string;
-    name: string;
-    image: string;
-    qty: number;
-    price: number;
-}
 
-interface Order {
-    id: string;
-    userId: string;
-    items: OrderItem[];
-    total: number;
-    status: string;
-    shippingMethod: string;
-    createdAt: any;
-}
 
 const EmptyOrders = ({ activeTab, colors }: { activeTab: string; colors: any }) => (
     <View style={emptyStyles.container}>
@@ -64,33 +49,57 @@ export default function MyOrdersScreen() {
         const unsubscribe = onSnapshot(q, (snapshot) => {
             const list = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Order));
             const filtered = list.filter(order => {
-                if (activeTab === 'active') return order.status !== 'Completed' && order.status !== 'Cancelled';
-                return order.status === 'Completed' || order.status === 'Cancelled';
+                const status = order.status?.toLowerCase();
+                if (activeTab === 'active') {
+                    return status !== 'completed' && status !== 'cancelled';
+                }
+                return status === 'completed' || status === 'cancelled';
             });
             setOrders(filtered);
             setLoading(false);
-        }, () => setLoading(false));
+        }, (err) => {
+            console.error("Orders Load Error:", err);
+            setLoading(false);
+        });
         return () => unsubscribe();
     }, [currentUser, activeTab]);
 
     const renderOrderItem = ({ item }: { item: Order }) => {
         const firstItem = item.items[0];
         const totalItems = item.items.reduce((sum, i) => sum + i.qty, 0);
+        
+        const getStatusColor = (status: string) => {
+            const s = status.toLowerCase();
+            if (s === 'completed') return { bg: '#E8F8EE', text: '#2ECC71' };
+            if (s === 'cancelled') return { bg: '#FFF0F0', text: '#FF4D4D' };
+            return { bg: '#E8F0FF', text: '#3498DB' };
+        };
+
+        const statusStyle = getStatusColor(item.status);
+
         return (
-            <TouchableOpacity style={[styles.orderCard, { backgroundColor: colors.card }]} onPress={() => router.push({ pathname: '/(main)/track-order', params: { orderId: item.id } })}>
+            <TouchableOpacity 
+                style={[styles.orderCard, { backgroundColor: colors.card }]} 
+                onPress={() => router.push({ pathname: '/(main)/track-order', params: { orderId: item.id } })}
+            >
                 <View style={styles.orderLeft}>
                     <Image source={{ uri: firstItem.image }} style={styles.orderImage} />
                 </View>
                 <View style={styles.orderMid}>
                     <Text style={[styles.orderTitle, { color: colors.text }]} numberOfLines={1}>{firstItem.name}</Text>
                     <Text style={[styles.orderQty, { color: colors.textLight }]}>{totalItems} Items | {item.shippingMethod}</Text>
-                    <View style={[styles.statusBadge, { backgroundColor: item.status === 'Completed' ? '#E8F8EE' : item.status === 'Cancelled' ? '#FFF0F0' : '#E8F0FF' }]}>
-                        <Text style={[styles.statusText, { color: item.status === 'Completed' ? '#2ECC71' : item.status === 'Cancelled' ? '#FF4D4D' : '#3498DB' }]}>{item.status}</Text>
+                    <View style={[styles.statusBadge, { backgroundColor: statusStyle.bg }]}>
+                        <Text style={[styles.statusText, { color: statusStyle.text }]}>
+                            {item.status.charAt(0).toUpperCase() + item.status.slice(1).replace('-', ' ')}
+                        </Text>
                     </View>
                 </View>
                 <View style={styles.orderRight}>
                     <Text style={[styles.orderPrice, { color: COLORS.primary }]}>${item.total.toFixed(2)}</Text>
-                    <TouchableOpacity style={styles.trackBtn} onPress={() => router.push({ pathname: '/(main)/track-order', params: { orderId: item.id } })}>
+                    <TouchableOpacity 
+                        style={styles.trackBtn} 
+                        onPress={() => router.push({ pathname: '/(main)/track-order', params: { orderId: item.id } })}
+                    >
                         <Text style={styles.trackText}>Track</Text>
                     </TouchableOpacity>
                 </View>

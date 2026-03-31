@@ -117,3 +117,37 @@ export interface GrowthUpdate {
     date: any;
     notes?: string;
 }
+
+// -- Loyalty & Rewards --
+
+export type LoyaltyTier = 'seed' | 'sprout' | 'bloom' | 'evergreen';
+
+export interface LoyaltyProfile {
+    id: string;
+    userId: string;
+    points: number;
+    totalEarned: number;
+    tier: LoyaltyTier;
+    streak: number; // consecutive login days
+    lastLoginDate?: any;
+    joinedAt: any;
+}
+
+export interface PointTransaction {
+    id: string;
+    userId: string;
+    amount: number; // positive = earned, negative = redeemed
+    type: 'purchase' | 'care' | 'garden' | 'review' | 'streak' | 'redeem' | 'bonus';
+    reason: string;
+    createdAt: any;
+}
+
+export interface Reward {
+    id: string;
+    name: string;
+    description: string;
+    pointsCost: number;
+    icon: string;
+    category: 'discount' | 'shipping' | 'exclusive' | 'gift';
+    isActive: boolean;
+}

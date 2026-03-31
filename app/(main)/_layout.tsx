@@ -38,6 +38,8 @@ export default function MainLayout() {
             <Stack.Screen name="my-garden" />
             <Stack.Screen name="add-to-garden" />
             <Stack.Screen name="plant-care-details" />
+            <Stack.Screen name="loyalty" />
+            <Stack.Screen name="points-history" />
         </Stack>
     );
 }

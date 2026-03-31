@@ -193,6 +193,19 @@ export default function HomeScreen() {
                         </View>
                     </TouchableOpacity>
 
+                    <TouchableOpacity 
+                        style={[styles.aiBanner, { backgroundColor: '#FFF8E1', borderColor: '#FFB300', marginTop: -8 }]}
+                        onPress={() => router.push('/(main)/loyalty')}
+                    >
+                        <View style={styles.aiBannerText}>
+                            <Text style={[styles.aiBannerTitle, { color: '#F57F17' }]}>🏆 Rewards & Loyalty</Text>
+                            <Text style={[styles.aiBannerSub, { color: colors.text }]}>Earn points and unlock exclusive perks</Text>
+                        </View>
+                        <View style={[styles.aiBannerIcon, { backgroundColor: '#F57F17' }]}>
+                            <Ionicons name="trophy" size={24} color={COLORS.white} />
+                        </View>
+                    </TouchableOpacity>
+
                     <View style={styles.sectionHeader}>
                         <Text style={[styles.sectionTitle, { color: colors.text }]}>Category</Text>
                         <TouchableOpacity><Text style={[styles.seeAll, { color: colors.primary }]}>See All</Text></TouchableOpacity>

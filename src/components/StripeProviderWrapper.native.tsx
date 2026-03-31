@@ -1,5 +1,4 @@
 import React from 'react';
-import { StripeProvider } from '@stripe/stripe-react-native';
 
 interface StripeProviderWrapperProps {
   children: React.ReactNode;
@@ -13,13 +12,16 @@ const StripeProviderWrapper: React.FC<StripeProviderWrapperProps> = ({ children,
   }
 
   try {
+    // Lazy load Stripe to prevent crash at the top-level import if native modules are missing
+    const { StripeProvider } = require('@stripe/stripe-react-native');
+    
     return (
       <StripeProvider publishableKey={publishableKey}>
         {children as any}
       </StripeProvider>
     );
   } catch (error) {
-    console.error('Failed to initialize StripeProvider:', error);
+    console.error('Stripe native module not found or failed to load. Ensure you are using a development client with the Stripe plugin.', error);
     return <>{children}</>;
   }
 };

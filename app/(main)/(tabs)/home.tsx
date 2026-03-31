@@ -179,6 +179,19 @@ export default function HomeScreen() {
                             <Ionicons name="camera" size={24} color={COLORS.white} />
                         </View>
                     </TouchableOpacity>
+                    
+                    <TouchableOpacity 
+                        style={[styles.aiBanner, { backgroundColor: '#E8F5E9', borderColor: '#4CAF50', marginTop: -8 }]}
+                        onPress={() => router.push('/(main)/my-garden')}
+                    >
+                        <View style={styles.aiBannerText}>
+                            <Text style={[styles.aiBannerTitle, { color: '#2E7D32' }]}>🏡 My Garden Tracker</Text>
+                            <Text style={[styles.aiBannerSub, { color: colors.text }]}>Manage your collection and care tasks</Text>
+                        </View>
+                        <View style={[styles.aiBannerIcon, { backgroundColor: '#2E7D32' }]}>
+                            <Ionicons name="leaf" size={24} color={COLORS.white} />
+                        </View>
+                    </TouchableOpacity>
 
                     <View style={styles.sectionHeader}>
                         <Text style={[styles.sectionTitle, { color: colors.text }]}>Category</Text>

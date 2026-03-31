@@ -81,3 +81,39 @@ export interface Order {
     updatedAt?: any;
 }
 
+export interface UserPlant {
+    id: string;
+    userId: string;
+    plantId?: string; // Reference to original plant from shop
+    nickname: string;
+    image: string;
+    location: string;
+    healthStatus: 'healthy' | 'needs-attention' | 'sick' | 'dormant';
+    dateAdded: any; // Firestore Timestamp
+    careSchedule: {
+        watering: number; // days
+        fertilizing: number; // days
+        repotting: number; // days (optional)
+    };
+    lastCare: {
+        watering?: any;
+        fertilizing?: any;
+        repotting?: any;
+    };
+}
+
+export interface CareLog {
+    id: string;
+    userPlantId: string;
+    type: 'watering' | 'fertilizing' | 'repotting' | 'pruning' | 'pest-control';
+    date: any;
+    notes?: string;
+}
+
+export interface GrowthUpdate {
+    id: string;
+    userPlantId: string;
+    image: string;
+    date: any;
+    notes?: string;
+}

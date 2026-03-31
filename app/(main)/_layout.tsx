@@ -35,6 +35,9 @@ export default function MainLayout() {
             <Stack.Screen name="invite-friends" />
             <Stack.Screen name="customer-service" />
             <Stack.Screen name="about-potea" />
+            <Stack.Screen name="my-garden" />
+            <Stack.Screen name="add-to-garden" />
+            <Stack.Screen name="plant-care-details" />
         </Stack>
     );
 }

@@ -30,7 +30,8 @@
     "scheme": "potea",
     "plugins": [
       "expo-router",
-      "expo-web-browser"
+      "expo-web-browser",
+      "@stripe/stripe-react-native"
     ]
   }
 }

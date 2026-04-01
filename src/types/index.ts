@@ -176,3 +176,27 @@ export interface UserSubscription {
     endDate?: any;
     cancelledAt?: any;
 }
+
+// -- Forum --
+
+export interface ForumPost {
+    id: string;
+    userId: string;
+    authorName: string;
+    authorAvatar: string;
+    content: string;
+    image?: string;
+    likes: string[]; // array of userIds
+    commentsCount: number;
+    createdAt: any;
+}
+
+export interface ForumComment {
+    id: string;
+    postId: string;
+    userId: string;
+    authorName: string;
+    authorAvatar: string;
+    content: string;
+    createdAt: any;
+}

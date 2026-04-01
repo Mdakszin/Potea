@@ -219,6 +219,19 @@ export default function HomeScreen() {
                         </View>
                     </TouchableOpacity>
 
+                    <TouchableOpacity 
+                        style={[styles.aiBanner, { backgroundColor: '#E3F2FD', borderColor: '#42A5F5', marginTop: -8 }]}
+                        onPress={() => router.push('/(main)/forum')}
+                    >
+                        <View style={styles.aiBannerText}>
+                            <Text style={[styles.aiBannerTitle, { color: '#1E88E5' }]}>🌍 Community Forum</Text>
+                            <Text style={[styles.aiBannerSub, { color: colors.text }]}>Connect with plant lovers</Text>
+                        </View>
+                        <View style={[styles.aiBannerIcon, { backgroundColor: '#1E88E5' }]}>
+                            <Ionicons name="people" size={24} color={COLORS.white} />
+                        </View>
+                    </TouchableOpacity>
+
                     <View style={styles.sectionHeader}>
                         <Text style={[styles.sectionTitle, { color: colors.text }]}>Category</Text>
                         <TouchableOpacity><Text style={[styles.seeAll, { color: colors.primary }]}>See All</Text></TouchableOpacity>

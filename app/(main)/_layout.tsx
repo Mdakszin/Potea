@@ -41,6 +41,9 @@ export default function MainLayout() {
             <Stack.Screen name="loyalty" />
             <Stack.Screen name="points-history" />
             <Stack.Screen name="subscription" />
+            <Stack.Screen name="forum" />
+            <Stack.Screen name="create-post" />
+            <Stack.Screen name="post-details" />
         </Stack>
     );
 }

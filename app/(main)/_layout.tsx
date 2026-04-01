@@ -40,6 +40,7 @@ export default function MainLayout() {
             <Stack.Screen name="plant-care-details" />
             <Stack.Screen name="loyalty" />
             <Stack.Screen name="points-history" />
+            <Stack.Screen name="subscription" />
         </Stack>
     );
 }

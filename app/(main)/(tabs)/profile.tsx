@@ -22,6 +22,7 @@ const MENU_ITEMS: MenuItem[] = [
     { id: '2', icon: 'wallet-outline', label: 'My E-Wallet', target: '/(main)/(tabs)/wallet' },
     { id: '13', icon: 'leaf-outline', label: 'My Garden', target: '/(main)/my-garden' },
     { id: '14', icon: 'trophy-outline', label: 'My Rewards', target: '/(main)/loyalty' },
+    { id: '15', icon: 'diamond-outline', label: 'Premium Plan', target: '/(main)/subscription' },
     { id: '11', icon: 'heart-outline', label: 'Wishlist', target: '/(main)/my-favorites' },
     { id: '3', icon: 'notifications-outline', label: 'Notifications', target: '/(main)/notification-settings' },
     { id: '4', icon: 'location-outline', label: 'Address', target: '/(main)/address' },

@@ -151,3 +151,28 @@ export interface Reward {
     category: 'discount' | 'shipping' | 'exclusive' | 'gift';
     isActive: boolean;
 }
+
+// -- Subscriptions --
+
+export type SubscriptionTier = 'free' | 'green_thumb' | 'plant_pro';
+
+export interface SubscriptionPlan {
+    id: SubscriptionTier;
+    name: string;
+    price: number; // monthly in ZAR
+    description: string;
+    color: string;
+    icon: string;
+    features: string[];
+    highlighted?: boolean;
+}
+
+export interface UserSubscription {
+    id: string;
+    userId: string;
+    planId: SubscriptionTier;
+    status: 'active' | 'cancelled' | 'expired';
+    startDate: any;
+    endDate?: any;
+    cancelledAt?: any;
+}

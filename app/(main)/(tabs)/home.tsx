@@ -206,6 +206,19 @@ export default function HomeScreen() {
                         </View>
                     </TouchableOpacity>
 
+                    <TouchableOpacity 
+                        style={[styles.aiBanner, { backgroundColor: '#F3E5F5', borderColor: '#AB47BC', marginTop: -8 }]}
+                        onPress={() => router.push('/(main)/subscription')}
+                    >
+                        <View style={styles.aiBannerText}>
+                            <Text style={[styles.aiBannerTitle, { color: '#8E24AA' }]}>💎 Go Premium</Text>
+                            <Text style={[styles.aiBannerSub, { color: colors.text }]}>Unlock expert care & exclusive tools</Text>
+                        </View>
+                        <View style={[styles.aiBannerIcon, { backgroundColor: '#8E24AA' }]}>
+                            <Ionicons name="diamond" size={24} color={COLORS.white} />
+                        </View>
+                    </TouchableOpacity>
+
                     <View style={styles.sectionHeader}>
                         <Text style={[styles.sectionTitle, { color: colors.text }]}>Category</Text>
                         <TouchableOpacity><Text style={[styles.seeAll, { color: colors.primary }]}>See All</Text></TouchableOpacity>

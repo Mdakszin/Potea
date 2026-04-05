@@ -12,7 +12,7 @@ import { useAuth } from '../../src/contexts/AuthContext';
 import { subscriptionService } from '../../src/services/subscriptionService';
 import { paymentService } from '../../src/services/paymentService';
 import { SubscriptionPlan, SubscriptionTier, UserSubscription } from '../../src/types';
-import { useStripe } from '@stripe/stripe-react-native';
+import { useAppStripe } from '../../src/services/stripe';
 
 export default function SubscriptionScreen() {
     const { colors } = useTheme();
@@ -23,7 +23,7 @@ export default function SubscriptionScreen() {
     const [currentSub, setCurrentSub] = useState<UserSubscription | null>(null);
     const [loading, setLoading] = useState(true);
     const [subscribing, setSubscribing] = useState<string | null>(null);
-    const { initPaymentSheet, presentPaymentSheet } = useStripe();
+    const { initPaymentSheet, presentPaymentSheet } = useAppStripe();
 
     useEffect(() => {
         loadData();

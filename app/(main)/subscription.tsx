@@ -10,7 +10,9 @@ import { COLORS, SPACING } from '../../src/constants/theme';
 import { useTheme } from '../../src/contexts/ThemeContext';
 import { useAuth } from '../../src/contexts/AuthContext';
 import { subscriptionService } from '../../src/services/subscriptionService';
+import { paymentService } from '../../src/services/paymentService';
 import { SubscriptionPlan, SubscriptionTier, UserSubscription } from '../../src/types';
+import { useStripe } from '@stripe/stripe-react-native';
 
 export default function SubscriptionScreen() {
     const { colors } = useTheme();
@@ -21,6 +23,7 @@ export default function SubscriptionScreen() {
     const [currentSub, setCurrentSub] = useState<UserSubscription | null>(null);
     const [loading, setLoading] = useState(true);
     const [subscribing, setSubscribing] = useState<string | null>(null);
+    const { initPaymentSheet, presentPaymentSheet } = useStripe();
 
     useEffect(() => {
         loadData();
@@ -77,10 +80,43 @@ export default function SubscriptionScreen() {
                     text: `Subscribe — R${plan.price}/mo`,
                     onPress: async () => {
                         setSubscribing(plan.id);
-                        await subscriptionService.subscribeToPlan(currentUser.uid, plan.id);
-                        Alert.alert('🎉 Welcome!', `You are now a ${plan.name} member!`);
-                        loadData();
-                        setSubscribing(null);
+                        
+                        try {
+                            // 1. Get client secret from our Stripe wrapper
+                            const { clientSecret, error: intentError } = await paymentService.createPaymentIntent(plan.price);
+                            if (intentError || !clientSecret) {
+                                throw new Error(intentError || 'Failed to initialize payment.');
+                            }
+
+                            // 2. Initialize Payment Sheet
+                            const { error: initError } = await initPaymentSheet({
+                                paymentIntentClientSecret: clientSecret,
+                                merchantDisplayName: 'Potea Plants',
+                            });
+                            if (initError) {
+                                throw new Error(initError.message);
+                            }
+
+                            // 3. Present Payment Sheet
+                            const { error: paymentError } = await presentPaymentSheet();
+                            if (paymentError) {
+                                // User cancelled or payment failed
+                                if (paymentError.code !== 'Canceled') {
+                                    Alert.alert('Payment Failed', paymentError.message);
+                                }
+                                setSubscribing(null);
+                                return;
+                            }
+
+                            // 4. Payment Success - Update Firestore
+                            await subscriptionService.subscribeToPlan(currentUser.uid, plan.id);
+                            Alert.alert('🎉 Welcome!', `You are now a ${plan.name} member!`);
+                            loadData();
+                        } catch (err: any) {
+                            Alert.alert('Error', err.message || 'Something went wrong.');
+                        } finally {
+                            setSubscribing(null);
+                        }
                     },
                 },
             ]

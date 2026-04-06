@@ -39,6 +39,13 @@
           "enableGooglePay": true
         }
       ]
-    ]
+    ],
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "370cdaa1-e0eb-4f3e-95b7-8f69ef499c18"
+      }
+    },
+    "owner": "mdakszindev"
   }
 }

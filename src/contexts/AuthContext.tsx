@@ -61,9 +61,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
     // Google Auth Request for Native
     const [request, response, promptAsync] = Google.useAuthRequest({
-        iosClientId: process.env.EXPO_PUBLIC_IOS_CLIENT_ID,
-        androidClientId: process.env.EXPO_PUBLIC_ANDROID_CLIENT_ID,
-        webClientId: process.env.EXPO_PUBLIC_WEB_CLIENT_ID || 'web-client-id-placeholder',
+        iosClientId: process.env.EXPO_PUBLIC_IOS_CLIENT_ID || 'dummy-ios-client-id',
+        androidClientId: process.env.EXPO_PUBLIC_ANDROID_CLIENT_ID || 'dummy-android-client-id',
+        webClientId: process.env.EXPO_PUBLIC_WEB_CLIENT_ID || 'dummy-web-client-id',
     });
 
     useEffect(() => {

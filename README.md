@@ -18,12 +18,12 @@
 
 ## 🚀 Tech Stack
 
-- **Framework**: [React Native](https://reactnative.dev/) with [Expo SDK 55](https://expo.dev/)
+- **Framework**: [React Native](https://reactnative.dev/) with [Expo SDK 54](https://expo.dev/)
 - **Icons**: [Ionicons](https://ionic.io/icons) via `@expo/vector-icons`
 - **Navigation**: [React Navigation](https://reactnavigation.org/) (Stack & Bottom Tabs)
 - **State Management**: React Hooks (useState, useEffect)
 - **Typography**: Custom premium styles
-- **Storage**: Mock Real-time Database (Firebase ready)
+- **Storage**: Real-time Database Firebase
 
 ---
 
@@ -80,4 +80,4 @@
 This project is for demonstration and portfolio purposes.
 
 ---
-*Created with ❤️ by Antigravity*
+*Created with ❤️ by Odwa Tervin Mdanyana*

@@ -60,9 +60,8 @@ export default function AddToGardenScreen() {
 
         setSaving(true);
         try {
-            await gardenService.addUserPlant({
+            const plantData: any = {
                 userId: currentUser.uid,
-                plantId: selectedPlant?.id,
                 nickname: nickname || selectedPlant?.name || 'My Plant',
                 image: selectedPlant?.image || 'https://images.unsplash.com/photo-1545239351-ef35f43d514b?w=400',
                 location: location,
@@ -73,7 +72,13 @@ export default function AddToGardenScreen() {
                     repotting: 365, // Default to once a year
                 },
                 lastCare: {}
-            });
+            };
+
+            if (selectedPlant?.id) {
+                plantData.plantId = selectedPlant.id;
+            }
+
+            await gardenService.addUserPlant(plantData);
             Alert.alert("Success", "Plant added to your garden!", [
                 { text: "OK", onPress: () => router.replace('/(main)/my-garden') }
             ]);

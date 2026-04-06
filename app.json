@@ -2,6 +2,7 @@
   "expo": {
     "name": "potea",
     "slug": "potea",
+    "sdkVersion": "54.0.0",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -20,10 +21,31 @@
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
-      }
+      },
+      "package": "com.anonymous.potea"
     },
     "web": {
-      "favicon": "./assets/favicon.png"
-    }
+      "favicon": "./assets/favicon.png",
+      "output": "server"
+    },
+    "scheme": "potea",
+    "plugins": [
+      "expo-router",
+      "expo-web-browser",
+      [
+        "@stripe/stripe-react-native",
+        {
+          "merchantIdentifier": "merchant.potea.com",
+          "enableGooglePay": true
+        }
+      ]
+    ],
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "370cdaa1-e0eb-4f3e-95b7-8f69ef499c18"
+      }
+    },
+    "owner": "mdakszindev"
   }
 }

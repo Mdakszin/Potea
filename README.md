@@ -6,24 +6,28 @@
 
 ## ✨ Key Features
 
+- **🌱 My Garden**: Track your personal indoor plant collection and their ongoing care.
+- **🔐 Secure Authentication**: Real authentication with Firebase, including Google Sign-In.
+- **💳 Stripe Payments & Subscriptions**: Secure checkout for orders and premium tier subscriptions.
+- **🤝 Community Forum**: Dedicated space to connect with other plant enthusiasts and share tips.
+- **🏆 Loyalty Program**: Earn points on purchases and redeem them for rewards.
 - **🛒 Seamless Shopping**: Browse an expanded catalog of 50+ plants with detailed metadata, reviews, and ratings.
 - **💳 My E-Wallet**: A complete financial hub with top-up flows, transaction history, and digital e-receipts.
 - **📍 Smart Shipping**: Advanced address management with location previews and default settings.
 - **🛠️ Rich Profiles**: Comprehensive profile editing, notification preferences, and security settings.
-- **💬 Support Ecosystem**: Categorized FAQ and a simulated live chat interface for customer support.
-- **🛡️ Security**: Integrated PIN and Biometric (FaceID/Fingerprint) mockup flows.
-- **🌍 Internationalization**: Multi-language support template (English, Mandarin, Spanish, etc.).
 
 ---
 
 ## 🚀 Tech Stack
 
 - **Framework**: [React Native](https://reactnative.dev/) with [Expo SDK 54](https://expo.dev/)
+- **Navigation**: [Expo Router](https://docs.expo.dev/router/introduction/) (File-based navigation)
+- **Authentication**: Firebase Auth (Email/Password & Google Sign-In)
+- **Database / Backend**: Firebase Firestore
+- **Payments**: Stripe (Stripe React Native & Checkout)
 - **Icons**: [Ionicons](https://ionic.io/icons) via `@expo/vector-icons`
-- **Navigation**: [React Navigation](https://reactnavigation.org/) (Stack & Bottom Tabs)
-- **State Management**: React Hooks (useState, useEffect)
+- **State Management**: React Hooks & Zustand
 - **Typography**: Custom premium styles
-- **Storage**: Real-time Database Firebase
 
 ---
 
@@ -67,11 +71,12 @@
 
 ## 📂 Project Structure
 
+- `app/`: Expo Router file-based route definitions (screens and layout)
 - `src/components`: Reusable UI components (Buttons, TextFields, Cards, etc.)
-- `src/screens`: All feature screens (Home, Wallet, Profile, etc.)
-- `src/navigation`: Navigation stack and tab configurations
+- `src/services`: API and Backend integration (Firebase, Stripe, etc.)
+- `src/store`: Global state management (Zustand)
 - `src/constants`: Theme, data, and global constants
-- `src/config`: Integration and API configurations
+- `src/config`: Integration and third-party configuration
 
 ---
 
